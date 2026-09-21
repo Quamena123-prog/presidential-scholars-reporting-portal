@@ -1,0 +1,63 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Portal &middot; Sign In</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23031229'/%3E%3Ctext x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3EPS%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body class="login">
+<a class="skip-link" href="#loginForm">Skip to login</a>
+
+<div class="login-wrap">
+    <div class="card login-card">
+        <div class="login-brand">
+            <span class="crest" aria-hidden="true">
+                <svg viewBox="0 0 30 30" aria-hidden="true">
+                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#fff">PS</text>
+                </svg>
+            </span>
+            <h1>Admin Portal</h1>
+            <p class="muted">Presidential Scholars Academic Reporting Portal</p>
+        </div>
+
+        <form id="loginForm" novalidate autocomplete="on">
+            <div class="field">
+                <label for="loginUser">Username</label>
+                <input class="input" type="text" id="loginUser" name="username"
+                       placeholder="Administrator username" autocomplete="username" autofocus>
+            </div>
+
+            <div class="field" style="margin-top:.9rem">
+                <label for="loginPass">Password</label>
+                <div class="pw-wrap">
+                    <input class="input" type="password" id="loginPass" name="password"
+                           placeholder="Your password" autocomplete="current-password">
+                    <button class="pw-toggle" type="button" id="pwToggle" aria-label="Show password">&#128065;</button>
+                </div>
+            </div>
+
+            <div class="error-text" id="loginError" role="alert" style="margin:.8rem 0"></div>
+
+            <button class="btn btn-lg btn-block" type="submit" id="loginBtn">Log In</button>
+        </form>
+
+        <hr class="lg-divider">
+
+        <p class="muted small text-center" style="margin:0">
+            Authorised staff only. Every review action is recorded in the portal&rsquo;s audit trail.
+        </p>
+        <p class="text-center" style="margin:.8rem 0 0">
+            <a class="small" href="/submit">&larr; Back to the public form</a>
+        </p>
+    </div>
+</div>
+
+<div class="toast-wrap" id="toasts" aria-live="polite"></div>
+
+<script src="/assets/app.js"></script>
+<script src="/assets/login.js"></script>
+</body>
+</html>

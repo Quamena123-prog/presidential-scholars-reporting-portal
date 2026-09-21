@@ -1,0 +1,22 @@
+# Runtime data and logs
+data/*.db
+data/*.db-shm
+data/*.db-wal
+*.log
+server.out.log
+server.err.log
+
+# Dependencies
+node_modules/
+
+# Environment / secrets
+.env
+.env.*
+email.json
+
+# OS
+Thumbs.db
+.DS_Store
+Ehthumbs.db
+.vercel
+.env*
