@@ -16,10 +16,11 @@ exported.
 | Field | Value |
 |---|---|
 | Username | `drp` |
-| Password | `DrP2026!` |
+| Password | `?Livingstone1879!` |
 
 Change it any time from **Change Password** in the admin sidebar, or set your
-own before first run with `ADMIN_PASSWORD` (see below).
+own with `ADMIN_PASSWORD` (see below). On hosted deployments the admin
+password is kept in sync with `ADMIN_PASSWORD` automatically.
 
 ---
 
@@ -119,7 +120,9 @@ references for legacy rows.
   node --version
   ```
 
-No `npm install` is required — the app uses only Node's built-in modules.
+The default local backend uses only Node's built-in modules, but
+`npm install` is still required once so `@libsql/client` is available for
+hosted (Turso) deployments.
 
 ## Run the app
 

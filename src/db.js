@@ -218,13 +218,38 @@ async function ensureDefaultAdmin() {
 
     const rows = await raw('SELECT COUNT(*) AS n FROM admins');
     const count = rows && rows[0] ? Number(rows[0].n) : 0;
+
+    const username = process.env.ADMIN_USERNAME || 'drp';
+    const password = process.env.ADMIN_PASSWORD || '?Livingstone1879!';
+    const fullName = process.env.ADMIN_FULL_NAME || 'Dr. P';
+
+    // Keep the admin account in step with ADMIN_PASSWORD so a rotated
+    // secret also updates an existing hosted database on the next request.
     if (count > 0) {
+        if (process.env.ADMIN_PASSWORD) {
+            const sec = require('./security');
+            const existing = await raw(
+                'SELECT id, password_hash FROM admins WHERE username = ?',
+                [username]
+            );
+            if (existing && existing.length && !sec.verifyPassword(password, existing[0].password_hash)) {
+                const hash = sec.hashPassword(password);
+                if (engine.local) {
+                    engine.local
+                        .prepare('UPDATE admins SET password_hash = ?, full_name = ? WHERE id = ?')
+                        .run(hash, fullName, existing[0].id);
+                } else {
+                    await engine.client.execute({
+                        sql: 'UPDATE admins SET password_hash = ?, full_name = ? WHERE id = ?',
+                        args: [hash, fullName, existing[0].id],
+                    });
+                }
+                console.log(`[db] Admin credentials synced from ADMIN_PASSWORD (${username}).`);
+            }
+        }
         return null;
     }
 
-    const username = process.env.ADMIN_USERNAME || 'drp';
-    const password = process.env.ADMIN_PASSWORD || 'DrP2026!';
-    const fullName = process.env.ADMIN_FULL_NAME || 'Dr. P';
     const hash = require('./security').hashPassword(password);
 
     if (engine.local) {
