@@ -8,19 +8,23 @@
  * statement; nothing is concatenated into SQL. The only dynamic SQL
  * (ORDER BY) is built from a strict allow-list.
  *
- * Review workflow: every new report starts as "pending". Admins approve
- * it ("verified"), reject it ("rejected"), request corrections
+ * Review workflow: every new report starts as "pending". Admins
+ * approve it ("verified"), reject it ("rejected"), request corrections
  * ("needs_correction"), or soft-delete it with "archived". Each
  * transition is recorded in academic_report_audit.
+ *
+ * Duplicate protection: one report per student per academic term is
+ * enforced by a UNIQUE index on (student_id, academic_year, semester)
+ * and checked up front so the student sees a friendly message.
  * -----------------------------------------------------------------
  */
 
 const { db } = require('./db');
-const { CLASSIFICATIONS, SEMESTERS, REVIEW_STATUSES, isAcademicYear, currentAcademicTerm } = require('./validate');
+const { CLASSIFICATIONS, SEMESTERS, REVIEW_STATUSES } = require('./validate');
 const { randomCode } = require('./security');
 
 const SORTABLE = {
-    created_at: 'created_at',
+    id: 'id',
     student_id: 'student_id',
     first_name: 'first_name',
     last_name: 'last_name',
@@ -34,6 +38,7 @@ const SORTABLE = {
     semester_gpa: 'semester_gpa',
     career_gpa: 'career_gpa',
     review_status: 'review_status',
+    created_at: 'created_at',
 };
 
 function orderClause(sort, dir) {
@@ -44,6 +49,21 @@ function orderClause(sort, dir) {
         return `ORDER BY last_name ${direction}, first_name ${direction}, id ${tie}`;
     }
     return `ORDER BY ${key} ${direction}, id ${tie}`;
+}
+
+function gpaRound(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? Number(n.toFixed(2)) : 0;
+}
+
+function decorate(row) {
+    if (!row) return null;
+    return Object.assign({}, row, {
+        semester_gpa: gpaRound(row.semester_gpa),
+        career_gpa: gpaRound(row.career_gpa),
+        attempted_credit_hours: Number(row.attempted_credit_hours || 0),
+        passed_credit_hours: Number(row.passed_credit_hours || 0),
+    });
 }
 
 function buildWhere(query) {
@@ -71,8 +91,14 @@ function buildWhere(query) {
         params.push(semester);
     }
 
+    const reviewStatus = (query.review_status || '').trim();
+    if (REVIEW_STATUSES.includes(reviewStatus)) {
+        clauses.push('review_status = ?');
+        params.push(reviewStatus);
+    }
+
     const academicYear = (query.academic_year || '').trim();
-    if (isAcademicYear(academicYear)) {
+    if (/^\d{4}\u2013\d{4}$/.test(academicYear)) {
         clauses.push('academic_year = ?');
         params.push(academicYear);
     }
@@ -81,24 +107,6 @@ function buildWhere(query) {
     if (major) {
         clauses.push('major = ?');
         params.push(major);
-    }
-
-    const reviewStatus = (query.review_status || '').trim();
-    if (REVIEW_STATUSES.includes(reviewStatus)) {
-        clauses.push('review_status = ?');
-        params.push(reviewStatus);
-    }
-
-    const dateFrom = (query.date_from || '').trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) {
-        clauses.push('date(created_at) >= date(?)');
-        params.push(dateFrom);
-    }
-
-    const dateTo = (query.date_to || '').trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) {
-        clauses.push('date(created_at) <= date(?)');
-        params.push(dateTo);
     }
 
     return {
@@ -129,18 +137,20 @@ async function listReports(query = {}) {
 
     const pages = Math.max(1, Math.ceil(total / perPage));
 
-    return { rows, total, page: Math.min(page, pages), pages, per_page: perPage };
+    return { rows: rows.map(decorate), total, page: Math.min(page, pages), pages, per_page: perPage };
 }
 
 async function allReports(query = {}) {
     const { where, params } = buildWhere(query);
-    return db
+    const rows = await db
         .prepare(`SELECT * FROM academic_reports ${where} ORDER BY created_at DESC, id DESC`)
         .all(...params);
+    return rows.map(decorate);
 }
 
 async function getReport(id) {
-    return db.prepare('SELECT * FROM academic_reports WHERE id = ?').get(Number(id)) || null;
+    const row = await db.prepare('SELECT * FROM academic_reports WHERE id = ?').get(Number(id)) || null;
+    return decorate(row);
 }
 
 async function getAudit(reportId) {
@@ -171,31 +181,46 @@ async function uniqueReference() {
     return `PSR-${year}-${Date.now().toString(36).toUpperCase()}`;
 }
 
+/**
+ * Duplicate guard used by the public form: does this student already
+ * have a report for the same academic year + semester?
+ */
+async function findTermDuplicate(data) {
+    return db
+        .prepare(
+            `SELECT id FROM academic_reports
+             WHERE student_id = ? AND academic_year = ? AND semester = ?
+             LIMIT 1`
+        )
+        .get(data.student_id, data.academic_year, data.semester) || null;
+}
+
 async function createReport(data, ip) {
     const reference = await uniqueReference();
 
     const info = await db
         .prepare(
             `INSERT INTO academic_reports
-                (student_id, last_name, first_name, major, classification,
-                 academic_year, semester, attempted_credit_hours, passed_credit_hours,
-                 semester_gpa, career_gpa, ip_address, confirmation_reference, review_status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+                (student_id, last_name, first_name, classification, major,
+                 academic_year, semester, attempted_credit_hours,
+                 passed_credit_hours, semester_gpa, career_gpa,
+                 confirmation_reference, review_status, ip_address)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
         )
         .run(
             data.student_id,
             data.last_name,
             data.first_name,
-            data.major,
             data.classification,
+            data.major,
             data.academic_year,
             data.semester,
             data.attempted_credit_hours,
             data.passed_credit_hours,
             data.semester_gpa,
             data.career_gpa,
-            ip || null,
-            reference
+            reference,
+            ip || null
         );
 
     const id = Number(info.lastInsertRowid);
@@ -207,8 +232,8 @@ async function updateReport(id, data, actor) {
     const info = await db
         .prepare(
             `UPDATE academic_reports SET
-                student_id = ?, last_name = ?, first_name = ?, major = ?,
-                classification = ?, academic_year = ?, semester = ?,
+                student_id = ?, last_name = ?, first_name = ?, classification = ?,
+                major = ?, academic_year = ?, semester = ?,
                 attempted_credit_hours = ?, passed_credit_hours = ?,
                 semester_gpa = ?, career_gpa = ?, internal_notes = ?,
                 updated_at = datetime('now','localtime')
@@ -218,8 +243,8 @@ async function updateReport(id, data, actor) {
             data.student_id,
             data.last_name,
             data.first_name,
-            data.major,
             data.classification,
+            data.major,
             data.academic_year,
             data.semester,
             data.attempted_credit_hours,
@@ -237,24 +262,6 @@ async function updateReport(id, data, actor) {
         return true;
     }
     return false;
-}
-
-/**
- * Duplicate guard: one report per student per academic term.
- * Optionally excludes a report id (when an admin edits a report).
- * `excludeId` lets the edit path avoid flagging the row itself.
- */
-async function findSemesterDuplicate(data, excludeId) {
-    const params = [data.student_id, data.academic_year, data.semester];
-    let sql =
-        `SELECT id FROM academic_reports
-         WHERE student_id = ? AND academic_year = ? AND semester = ?`;
-    if (excludeId) {
-        sql += ' AND id <> ?';
-        params.push(Number(excludeId));
-    }
-    sql += ' LIMIT 1';
-    return db.prepare(sql).get(...params) || null;
 }
 
 /**
@@ -314,78 +321,64 @@ async function deleteReport(id, actor) {
 }
 
 /**
- * Dashboard statistics for the whole database (not scoped to the
- * current filters). The five headline cards:
- *
- *   total_reports            - every submission
- *   submitted_this_semester  - reports for the term in progress
- *   avg_semester_gpa         - mean semester GPA (2dp)
- *   avg_career_gpa           - mean career GPA (2dp)
- *   total_students           - distinct reporting students
- *
- * Status/today/month counts are supplied for secondary UI labels.
+ * Dashboard statistics, optionally constrained by the active
+ * search/filter set so the toolbar stays in sync.
  */
-async function stats() {
-    const term = currentAcademicTerm();
+async function stats(query = {}) {
+    const { where, params } = buildWhere(query);
+    const { academic_year, semester } = require('./validate').currentAcademicTerm();
 
-    const total = await db.prepare('SELECT COUNT(*) AS n FROM academic_reports').get();
-    const termRow = await db
+    const row = await db
         .prepare(
-            'SELECT COUNT(*) AS n FROM academic_reports WHERE academic_year = ? AND semester = ?'
+            `SELECT
+                COUNT(*)                                   AS total,
+                COUNT(DISTINCT student_id)                 AS students,
+                COALESCE(AVG(semester_gpa), 0)             AS avg_semester_gpa,
+                COALESCE(AVG(career_gpa), 0)               AS avg_career_gpa,
+                SUM(CASE WHEN academic_year = ? AND semester = ? THEN 1 ELSE 0 END) AS this_term
+             FROM academic_reports ${where}`
         )
-        .get(term.academic_year, term.semester);
-    const avgSem = await db.prepare('SELECT AVG(semester_gpa) AS v FROM academic_reports').get();
-    const avgCareer = await db.prepare('SELECT AVG(career_gpa) AS v FROM academic_reports').get();
-    const students = await db.prepare('SELECT COUNT(DISTINCT student_id) AS n FROM academic_reports').get();
+        .get(...params, academic_year, semester);
 
-    const countBy = async (column, value) => {
-        const row = await db
-            .prepare(`SELECT COUNT(*) AS n FROM academic_reports WHERE ${column} = ?`)
-            .get(value);
-        return Number(row.n);
+    const count = async (extra) => {
+        const r = await db
+            .prepare(
+                `SELECT COUNT(*) AS n FROM academic_reports ${where}${
+                    where ? ' AND ' : 'WHERE '
+                }${extra}`
+            )
+            .get(...params);
+        return Number(r.n);
     };
-
-    const roundGpa = (v) => {
-        if (v === null || v === undefined) return null;
-        return Math.round((Number(v) + Number.EPSILON) * 100) / 100;
-    };
-
-    const today = await db
-        .prepare("SELECT COUNT(*) AS n FROM academic_reports WHERE date(created_at) = date('now','localtime')")
-        .get();
 
     return {
-        total: Number(total.n),
-        submitted_this_semester: Number(termRow.n),
-        avg_semester_gpa: roundGpa(avgSem.v),
-        avg_career_gpa: roundGpa(avgCareer.v),
-        total_students: Number(students.n),
-        pending: await countBy('review_status', 'pending'),
-        verified: await countBy('review_status', 'verified'),
-        rejected: await countBy('review_status', 'rejected'),
-        needs_correction: await countBy('review_status', 'needs_correction'),
-        archived: await countBy('review_status', 'archived'),
-        today: Number(today.n),
-        current_term: term,
+        total: Number(row.total),
+        students: Number(row.students),
+        avg_semester_gpa: Number(Number(row.avg_semester_gpa || 0).toFixed(2)),
+        avg_career_gpa: Number(Number(row.avg_career_gpa || 0).toFixed(2)),
+        this_term: Number(row.this_term),
+        current_term: { academic_year, semester },
+        pending: await count(`review_status = 'pending'`),
+        verified: await count(`review_status = 'verified'`),
+        rejected: await count(`review_status = 'rejected'`),
+        needs_correction: await count(`review_status = 'needs_correction'`),
+        archived: await count(`review_status = 'archived'`),
+        today: await count(`date(created_at) = date('now','localtime')`),
     };
-}
-
-async function academicYears() {
-    const stored = (await db
-        .prepare("SELECT DISTINCT academic_year AS y FROM academic_reports WHERE academic_year <> '' ORDER BY y DESC")
-        .all()).map((row) => row.y);
-    const offered = require('./validate').academicYearOptions();
-    return Array.from(new Set([...stored, ...offered])).sort().reverse();
 }
 
 async function majors() {
-    return (await db
-        .prepare("SELECT DISTINCT major AS m FROM academic_reports WHERE major <> '' ORDER BY m COLLATE NOCASE ASC")
-        .all()).map((row) => row.m);
+    const rows = await db
+        .prepare("SELECT DISTINCT major FROM academic_reports WHERE major <> '' ORDER BY major COLLATE NOCASE ASC")
+        .all();
+    return rows.map((row) => row.major);
 }
 
-async function semesters() {
-    return SEMESTERS;
+async function academicYears() {
+    const rows = await db
+        .prepare("SELECT DISTINCT academic_year AS y FROM academic_reports WHERE academic_year IS NOT NULL AND academic_year <> '' ORDER BY y DESC")
+        .all();
+    return rows.map((row) => row.y);
 }
 
 module.exports = {
@@ -398,9 +391,8 @@ module.exports = {
     reviewReport,
     archiveReport,
     deleteReport,
-    findSemesterDuplicate,
+    findTermDuplicate,
     stats,
-    academicYears,
     majors,
-    semesters,
+    academicYears,
 };

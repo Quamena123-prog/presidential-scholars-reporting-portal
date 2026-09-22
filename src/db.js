@@ -13,8 +13,7 @@
  *      `TURSO_DATABASE_URL` (and `TURSO_AUTH_TOKEN` when required).
  *
  * Every statement goes through the same PROMISE-based facade, so the
- * whole application is `async`-safe on both backends. Local file
- * creation, schema creation and migrations happen lazily on first use.
+ * whole application is `async`-safe on both backends.
  * -----------------------------------------------------------------
  */
 
@@ -31,10 +30,10 @@ const DB_FILE = path.join(DATA_DIR, 'presidential_scholars.db');
 let engine = null;
 let ready = null;
 
-const SCHEMA_SQL = `
+/** Semester academic reports for the Presidential Scholars Program. */
+const ACADEMIC_SCHEMA_SQL = `
     PRAGMA foreign_keys = ON;
 
-    -- One row per submitted semester academic report.
     CREATE TABLE IF NOT EXISTS academic_reports (
         id                      INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id              TEXT NOT NULL,
@@ -68,7 +67,7 @@ const SCHEMA_SQL = `
     CREATE INDEX IF NOT EXISTS idx_academic_review      ON academic_reports(review_status);
     CREATE INDEX IF NOT EXISTS idx_academic_term        ON academic_reports(academic_year, semester);
 
-    -- One report per student per term. Prevents accidental double submissions.
+    -- One report per student per academic term.
     CREATE UNIQUE INDEX IF NOT EXISTS idx_academic_unique_term
         ON academic_reports(student_id, academic_year, semester);
 
@@ -101,8 +100,111 @@ const SCHEMA_SQL = `
         FOREIGN KEY (report_id) REFERENCES academic_reports(id) ON DELETE CASCADE
     );
 
-    CREATE INDEX IF NOT EXISTS idx_academic_audit_report ON academic_report_audit(report_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_report ON academic_report_audit(report_id);
 `;
+
+/**
+ * Non-destructive migration for academic_reports: adds review-workflow
+ * columns only when missing and backfills confirmation references so
+ * legacy rows remain readable.
+ */
+async function migrateAcademic(run) {
+    const cols = await run('PRAGMA table_info(academic_reports)');
+    const existing = new Set(cols.map((c) => c.name));
+
+    const additions = [
+        ['confirmation_reference', 'TEXT'],
+        ['review_status', "TEXT NOT NULL DEFAULT 'pending'"],
+        ['reviewed_by', 'TEXT'],
+        ['reviewed_at', 'TEXT'],
+        ['archived_at', 'TEXT'],
+        ['internal_notes', 'TEXT'],
+    ];
+
+    for (const [column, type] of additions) {
+        if (!existing.has(column)) {
+            await run(`ALTER TABLE academic_reports ADD COLUMN ${column} ${type}`);
+        }
+    }
+
+    // One statement per call: HTTP-backed remote providers don't allow
+    // multi-statement strings through a single execute().
+    await run('CREATE UNIQUE INDEX IF NOT EXISTS idx_academic_unique_term ON academic_reports(student_id, academic_year, semester)');
+    await run('CREATE INDEX IF NOT EXISTS idx_academic_review ON academic_reports(review_status)');
+    await run('CREATE INDEX IF NOT EXISTS idx_academic_term ON academic_reports(academic_year, semester)');
+
+    // Backfill: every legacy row gets its own unique confirmation reference.
+    const missing = await run(
+        'SELECT id FROM academic_reports WHERE confirmation_reference IS NULL'
+    );
+    if (missing && missing.length) {
+        const { randomCode } = require('./security');
+        for (const row of missing) {
+            let ref = null;
+            for (let attempt = 0; attempt < 10 && !ref; attempt++) {
+                const candidate = `PSR-${new Date().getFullYear()}-${randomCode(6)}`;
+                const taken = await run(
+                    'SELECT 1 FROM academic_reports WHERE confirmation_reference = ?',
+                    [candidate]
+                );
+                if (!taken || !taken.length) ref = candidate;
+            }
+            if (ref) {
+                await run(
+                    'UPDATE academic_reports SET confirmation_reference = ? WHERE id = ?',
+                    [ref, row.id]
+                );
+            }
+        }
+    }
+}
+
+/**
+ * Seed a handful of demo rows so a brand-new database shows a
+ * populated dashboard. Existing rows are never touched.
+ */
+async function seedDemo(run) {
+    const countRow = await run('SELECT COUNT(*) AS n FROM academic_reports');
+    if (countRow && countRow[0] && Number(countRow[0].n) > 0) {
+        return false;
+    }
+
+    const demo = [
+        ['100244279', 'Johnson', 'Aisha', 'Computer and Information Systems', 'Senior', '2026\u20132027', 'Fall', 15, 15, 3.9, 3.92, 'verified', 'Dr. P'],
+        ['100244280', 'Adams', 'Riley', 'Business Administration', 'Junior', '2026\u20132027', 'Fall', 15, 14, 3.3, 3.46, 'pending', null],
+        ['100244281', 'Smith', 'Marcus', 'Biology', 'Senior', '2025\u20132026', 'Spring', 18, 18, 3.75, 3.81, 'verified', 'Dr. P'],
+        ['100244282', 'Garcia', 'Lily', 'Political Science', 'Freshman', '2026\u20132027', 'Fall', 12, 12, 3.1, 3.05, 'needs_correction', 'Dr. P'],
+        ['100244283', 'Brown', 'Ethan', 'Mathematics', 'Sophomore', '2025\u20132026', 'Fall', 16, 15, 2.95, 3.22, 'pending', null],
+        ['100244284', 'Davis', 'Olivia', 'Communication Studies', 'Junior', '2026\u20132027', 'Fall', 14, 14, 3.6, 3.6, 'rejected', 'Dr. P'],
+    ];
+
+    const { randomCode } = require('./security');
+    for (const [student_id, last_name, first_name, major, classification, academic_year, semester, attempted, passed, sgpa, cgpa, status, by] of demo) {
+        const ref = `PSR-${new Date().getFullYear()}-${randomCode(6)}`;
+        const info = await run(
+            `INSERT INTO academic_reports
+                (student_id, last_name, first_name, major, classification,
+                 academic_year, semester, attempted_credit_hours,
+                 passed_credit_hours, semester_gpa, career_gpa,
+                 confirmation_reference, review_status, reviewed_by, reviewed_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'))`,
+            [student_id, last_name, first_name, major, classification, academic_year, semester,
+             attempted, passed, sgpa, cgpa, ref, status, by]
+        );
+        const lid = typeof info.lastInsertRowid === 'bigint' ? Number(info.lastInsertRowid) : Number(info.lastInsertRowid);
+        await run(
+            'INSERT INTO academic_report_audit (report_id, action, actor) VALUES (?, ?, ?)',
+            [lid, 'submitted', 'Student form']
+        );
+        if (status !== 'pending') {
+            await run(
+                'INSERT INTO academic_report_audit (report_id, action, actor) VALUES (?, ?, ?)',
+                [lid, status, by || 'Dr. P']
+            );
+        }
+    }
+    return true;
+}
 
 /**
  * Create the first admin account on first run. Credentials can be
@@ -139,68 +241,6 @@ async function ensureDefaultAdmin() {
     return { username, password, fullName, isDefault: !process.env.ADMIN_PASSWORD };
 }
 
-/**
- * Seed a small set of realistic reports the very first time a database
- * is created so the admin dashboard is immediately readable. This only
- * runs when the academic_reports table is completely empty; delete the
- * rows from the admin table (or the database file) to start clean.
- * Seed rows keep the status/audit fields consistent.
- */
-async function seedDemoRows(run) {
-    const check = await run('SELECT COUNT(*) AS n FROM academic_reports');
-    if (check && check[0] && Number(check[0].n) > 0) {
-        return;
-    }
-
-    const { randomCode } = require('./security');
-    const year = new Date().getFullYear();
-    const mkRef = async () => {
-        for (let attempt = 0; attempt < 10; attempt++) {
-            const candidate = `PSR-${year}-${randomCode(6)}`;
-            const taken = await run(
-                'SELECT 1 FROM academic_reports WHERE confirmation_reference = ?',
-                [candidate]
-            );
-            if (!taken || !taken.length) return candidate;
-        }
-        return `PSR-${year}-${Date.now().toString(36).toUpperCase()}`;
-    };
-
-    const rows = [
-        // Current semester (Fall 2026-2027) submissions.
-        { student_id: '100244279', last_name: 'Johnson', first_name: 'Aisha', major: 'Computer and Information Systems', classification: 'Senior', academic_year: '2026\u20132027', semester: 'Fall', attempted: 15, passed: 15, sem_gpa: 3.90, career_gpa: 3.92, created_at: '2026-09-06 09:12:00', status: 'verified' },
-        { student_id: '100244280', last_name: 'Adams', first_name: 'Riley', major: 'Business Administration', classification: 'Junior', academic_year: '2026\u20132027', semester: 'Fall', attempted: 15, passed: 14, sem_gpa: 3.30, career_gpa: 3.46, created_at: '2026-09-05 14:20:00', status: 'pending' },
-        { student_id: '100244282', last_name: 'Nguyen', first_name: 'Linh', major: 'Psychology', classification: 'Freshman', academic_year: '2026\u20132027', semester: 'Fall', attempted: 15, passed: 15, sem_gpa: 4.00, career_gpa: 4.00, created_at: '2026-09-08 08:45:00', status: 'verified' },
-        { student_id: '100244283', last_name: 'Patel', first_name: 'Rohan', major: 'Computer Science', classification: 'Sophomore', academic_year: '2026\u20132027', semester: 'Fall', attempted: 16, passed: 15, sem_gpa: 3.50, career_gpa: 3.58, created_at: '2026-09-10 11:05:00', status: 'pending' },
-        { student_id: '100244284', last_name: 'Williams', first_name: 'Taylor', major: 'Chemistry', classification: 'Junior', academic_year: '2026\u20132027', semester: 'Fall', attempted: 12, passed: 12, sem_gpa: 3.75, career_gpa: 3.81, created_at: '2026-09-12 10:30:00', status: 'verified' },
-        { student_id: '100244285', last_name: 'Brown', first_name: 'Jordan', major: 'Mathematics', classification: 'Senior', academic_year: '2026\u20132027', semester: 'Fall', attempted: 15, passed: 15, sem_gpa: 3.92, career_gpa: 3.86, created_at: '2026-09-14 13:40:00', status: 'verified' },
-        { student_id: '100244286', last_name: 'Garcia', first_name: 'Sofia', major: 'Accounting', classification: 'Sophomore', academic_year: '2026\u20132027', semester: 'Fall', attempted: 13, passed: 13, sem_gpa: 3.60, career_gpa: 3.66, created_at: '2026-09-16 16:22:00', status: 'needs_correction' },
-        // Earlier terms the same cohort reported (same students, distinct terms).
-        { student_id: '100244279', last_name: 'Johnson', first_name: 'Aisha', major: 'Computer and Information Systems', classification: 'Senior', academic_year: '2025\u20132026', semester: 'Fall', attempted: 15, passed: 15, sem_gpa: 3.85, career_gpa: 3.90, created_at: '2025-12-12 09:30:00', status: 'verified' },
-        { student_id: '100244279', last_name: 'Johnson', first_name: 'Aisha', major: 'Computer and Information Systems', classification: 'Senior', academic_year: '2025\u20132026', semester: 'Spring', attempted: 14, passed: 14, sem_gpa: 3.78, career_gpa: 3.88, created_at: '2026-05-02 10:10:00', status: 'verified' },
-        { student_id: '100244287', last_name: 'Davis', first_name: 'Elijah', major: 'Electrical Engineering', classification: 'Freshman', academic_year: '2025\u20132026', semester: 'Summer', attempted: 9, passed: 9, sem_gpa: 3.45, career_gpa: 3.52, created_at: '2026-07-21 12:50:00', status: 'verified' },
-    ];
-
-    for (const r of rows) {
-        const ref = await mkRef();
-        const reviewedAt = r.status === 'verified' ? r.created_at : null;
-        await run(
-            `INSERT INTO academic_reports
-                (student_id, last_name, first_name, major, classification,
-                 academic_year, semester, attempted_credit_hours, passed_credit_hours,
-                 semester_gpa, career_gpa, ip_address, created_at, updated_at,
-                 confirmation_reference, review_status, reviewed_by, reviewed_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '127.0.0.1', ?, ?, ?, ?, ?, ?)`,
-            [
-                r.student_id, r.last_name, r.first_name, r.major, r.classification,
-                r.academic_year, r.semester, r.attempted, r.passed, r.sem_gpa, r.career_gpa,
-                r.created_at, r.created_at, ref, r.status,
-                r.status === 'verified' ? 'Dr. P' : null, reviewedAt,
-            ]
-        );
-    }
-}
-
 /* =====================================================================
  |  Initialization
  * =================================================================== */
@@ -210,10 +250,11 @@ async function localInit() {
     const { DatabaseSync } = require('node:sqlite');
     const local = new DatabaseSync(DB_FILE);
     local.exec('PRAGMA journal_mode = WAL;');
-    local.exec(SCHEMA_SQL);
+    local.exec(ACADEMIC_SCHEMA_SQL);
 
     const run = async (sql, args) => local.prepare(sql).all(...(args || []));
-    await seedDemoRows(run);
+    await migrateAcademic(run);
+    await seedDemo(run);
     engine = { local };
 }
 
@@ -223,10 +264,11 @@ async function remoteInit() {
         url: process.env.TURSO_DATABASE_URL,
         authToken: process.env.TURSO_AUTH_TOKEN || undefined,
     });
-    await client.executeMultiple(SCHEMA_SQL);
+    await client.executeMultiple(ACADEMIC_SCHEMA_SQL);
 
     const run = async (sql, args) => (await client.execute({ sql, args: args || [] })).rows;
-    await seedDemoRows(run);
+    await migrateAcademic(run);
+    await seedDemo(run);
     engine = { client };
 }
 

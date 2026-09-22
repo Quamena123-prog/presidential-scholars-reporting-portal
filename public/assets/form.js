@@ -1,422 +1,406 @@
 /* ==================================================================
-   form.js - public scholar semester-report form behaviour.
-   Client-side checks are a convenience; the server validates again.
-   Flow: Fill in -> Review -> Submit -> Confirmation.
-   Confirmation is rendered from the saved POST response only - there
-   is no public lookup, so references cannot be enumerated.
+   form.js - public Presidential Scholars semester report form:
+   Fill In -> Review -> Submitted, with inline validation.
    ================================================================== */
 (function () {
     'use strict';
 
-    var form = document.getElementById('reportForm');
-    if (!form) return;
+    var $ = function (id) { return document.getElementById(id); };
 
-    var FIELDS = ['student_id', 'last_name', 'first_name', 'major', 'classification',
-        'academic_year', 'semester', 'attempted_credit_hours', 'passed_credit_hours',
-        'semester_gpa', 'career_gpa'];
+    var viewForm = $('viewForm');
+    var viewReview = $('viewReview');
+    var viewSuccess = $('viewSuccess');
+    if (!viewForm) return;
 
-    var STEP = {
-        FORM: 'stepForm',
-        REVIEW: 'stepReview',
-        CONFIRM: 'stepConfirm'
-    };
-
-    function $(id) { return document.getElementById(id); }
-
+    var form = $('reportForm');
     var errorSummary = $('errorSummary');
     var errorList = $('errorList');
-    var duplicateAlert = $('duplicateAlert');
+    var reviewBlocks = $('reviewBlocks');
 
-    /* ---------------- Academic years from the server ---------------- */
-    function loadMeta() {
-        fetch('/api/meta', { credentials: 'same-origin' })
-            .then(function (r) { return r.json(); })
-            .then(function (meta) {
-                var select = $('fYear');
-                (meta.academic_years || []).forEach(function (y) {
-                    var opt = document.createElement('option');
-                    opt.value = y;
-                    opt.textContent = y;
-                    select.appendChild(opt);
-                });
-            })
-            .catch(function () {});
+    var META = { classifications: [], semesters: [], academic_years: [] };
+    var MAX_CREDITS = 200;
+    var MAX_GPA = 4.0;
+
+    /* ----------------------------------------------------------------
+       Validation (mirrors the server rules in src/validate.js)
+       ---------------------------------------------------------------- */
+    function clean(value) {
+        return String(value === null || value === undefined ? '' : value).replace(/[\u0000-\u001F\u007F]/g, '').trim();
     }
 
-    /* ---------------- Field helpers ---------------- */
-    function el(name) { return form.querySelector('[name="' + name + '"]'); }
-
-    function labelFor(name) {
-        var input = el(name);
-        if (!input) return 'This field';
-        var field = input.closest('.field');
-        var label = field ? field.querySelector('label') : null;
-        return label ? label.textContent.replace('*', '').replace('(optional)', '').replace(/\s+/g, ' ').trim() : 'This field';
+    function toNum(value) {
+        var v = clean(value).replace(/,/g, '');
+        if (v === '') return null;
+        var n = Number(v);
+        return Number.isFinite(n) ? n : null;
     }
 
-    function fieldEl(name) {
-        var input = el(name);
-        return input ? input.closest('.field') : null;
+    function collect() {
+        return {
+            student_id: clean($('student_id').value).replace(/\s+/g, ''),
+            last_name: clean($('last_name').value),
+            first_name: clean($('first_name').value),
+            major: clean($('major').value),
+            classification: clean($('classification').value),
+            academic_year: clean($('academic_year').value),
+            semester: clean($('semester').value),
+            attempted_credit_hours: toNum($('attempted_credit_hours').value),
+            passed_credit_hours: toNum($('passed_credit_hours').value),
+            semester_gpa: toNum($('semester_gpa').value),
+            career_gpa: toNum($('career_gpa').value),
+        };
     }
 
-    function setError(name, message) {
-        var field = fieldEl(name);
-        if (!field) return;
-        var input = field.querySelector('.input');
-        var error = field.querySelector('.error-text');
-
-        if (message) {
-            field.classList.add('has-err');
-            if (input) { input.classList.add('invalid'); input.setAttribute('aria-invalid', 'true'); }
-            if (error) { error.textContent = message; error.classList.add('show'); }
-        } else {
-            field.classList.remove('has-err');
-            if (input) { input.classList.remove('invalid'); input.setAttribute('aria-invalid', 'false'); }
-            if (error) { error.classList.remove('show'); }
-        }
+    function killTrailingZeros(n) {
+        if (typeof n !== 'number' || !Number.isFinite(n)) return '';
+        return n.toFixed(2).replace(/\.?0+$/, '');
     }
 
-    function clearAllErrors() {
-        FIELDS.forEach(function (name) { setError(name, null); });
-        errorSummary.hidden = true;
-        errorList.innerHTML = '';
-    }
-
-    function showSummary(errors) {
-        errorList.innerHTML = '';
-        Object.keys(errors).forEach(function (name) {
-            var li = document.createElement('li');
-            var a = document.createElement('a');
-            a.href = '#' + name;
-            a.textContent = errors[name].message || errors[name];
-            a.addEventListener('click', function (e) {
-                e.preventDefault();
-                showStep(STEP.FORM);
-                var target = document.getElementById('f' + (name === 'student_id' ? 'StudentId' : name.toLowerCase()));
-                target = target || document.getElementById('f' + name);
-                var map = {
-                    student_id: 'fStudentId', last_name: 'fLastName', first_name: 'fFirstName',
-                    major: 'fMajor', classification: 'fClassification', academic_year: 'fYear',
-                    semester: 'fSemester', attempted_credit_hours: 'fAttempted',
-                    passed_credit_hours: 'fPassed', semester_gpa: 'fSemGpa', career_gpa: 'fCareerGpa'
-                };
-                var input = document.getElementById(map[name]);
-                if (input) setTimeout(function () { input.focus(); }, 60);
-            });
-            li.appendChild(a);
-            errorList.appendChild(li);
-        });
-        errorSummary.hidden = false;
-        errorSummary.focus();
-    }
-
-    function hideSummary() {
-        errorSummary.hidden = true;
-        errorList.innerHTML = '';
-    }
-
-    /* ---------------- Validation ---------------- */
-    function toNum(v) {
-        if (v === null || v === undefined) return NaN;
-        if (typeof v === 'number') return v;
-        var s = String(v).replace(/,/g, '').trim();
-        if (s === '') return NaN;
-        return Number(s);
-    }
-
-    function validateField(name, value) {
-        var v = (value === null || value === undefined) ? '' : String(value).trim();
-
-        if (v === '' && name !== 'academic_year') {
-            var label = labelFor(name);
-            if (name === 'academic_year') return { message: 'Please select an academic year.' };
-            if (name === 'semester') return { message: 'Please select a semester.' };
-            return { message: label + ' is required.' };
-        }
-        if (v === '' && name === 'academic_year') {
-            return { message: 'Please select an academic year.' };
-        }
-
-        if (name === 'student_id' && !window.PS.isValidStudentId(v)) {
-            return { message: 'Enter a valid student ID (letters and numbers only).' };
-        }
-        if (name === 'classification' && ['Freshman', 'Sophomore', 'Junior', 'Senior'].indexOf(v) === -1) {
-            return { message: 'Please choose a valid classification.' };
-        }
-        if (name === 'semester' && ['Fall', 'Spring', 'Summer'].indexOf(v) === -1) {
-            return { message: 'Please select a valid semester.' };
-        }
-        if (name === 'academic_year' && !/^\d{4}\u2013\d{4}$/.test(v)) {
-            return { message: 'Please select a valid academic year.' };
-        }
-        if (name === 'attempted_credit_hours') {
-            var at = toNum(v);
-            if (isNaN(at)) return { message: 'Attempted credit hours are required.' };
-            if (at < 0) return { message: 'Attempted credit hours cannot be negative.' };
-            if (at > 200) return { message: 'Attempted credit hours must be 200 or fewer.' };
-        }
-        if (name === 'passed_credit_hours') {
-            var ps = toNum(v);
-            if (isNaN(ps)) return { message: 'Passed credit hours are required.' };
-            if (ps < 0) return { message: 'Passed credit hours cannot be negative.' };
-            var attempted = toNum(el('attempted_credit_hours').value);
-            if (!isNaN(attempted) && attempted >= 0 && ps > attempted) {
-                return { message: 'Passed credit hours cannot exceed attempted credit hours.' };
-            }
-            if (ps > 200) return { message: 'Passed credit hours must be 200 or fewer.' };
-        }
-        if (name === 'semester_gpa' || name === 'career_gpa') {
-            var gpa = toNum(v);
-            if (isNaN(gpa)) return { message: 'GPA is required.' };
-            if (gpa < 0 || gpa > 4.0) return { message: 'Please enter a GPA between 0.00 and 4.00.' };
-        }
-        return null;
-    }
-
-    function validateAll() {
+    function validate(data) {
         var errors = {};
-        FIELDS.forEach(function (name) {
-            var err = validateField(name, el(name).value);
-            setError(name, err ? err.message : null);
-            if (err) errors[name] = err;
-        });
+
+        if (data.student_id === '') {
+            errors.student_id = 'Student ID is required.';
+        } else if (!window.PS.isValidStudentId(data.student_id)) {
+            errors.student_id = 'Enter a valid student ID (letters and numbers only).';
+        }
+
+        if (data.last_name === '') errors.last_name = 'Last name is required.';
+        if (data.first_name === '') errors.first_name = 'First name is required.';
+        if (data.major === '') errors.major = 'Major is required.';
+        if (data.classification === '') errors.classification = 'Classification is required.';
+
+        if (data.academic_year === '') errors.academic_year = 'Please select an academic year.';
+        if (data.semester === '') errors.semester = 'Please select a semester.';
+
+        if (data.attempted_credit_hours === null) {
+            errors.attempted_credit_hours = 'Attempted credit hours are required.';
+        } else if (data.attempted_credit_hours < 0) {
+            errors.attempted_credit_hours = 'Attempted credit hours cannot be negative.';
+        } else if (data.attempted_credit_hours > MAX_CREDITS) {
+            errors.attempted_credit_hours = 'Attempted credit hours must be ' + MAX_CREDITS + ' or fewer.';
+        }
+
+        var attemptedOk = data.attempted_credit_hours !== null &&
+            data.attempted_credit_hours >= 0 && data.attempted_credit_hours <= MAX_CREDITS;
+
+        if (data.passed_credit_hours === null) {
+            errors.passed_credit_hours = 'Passed credit hours are required.';
+        } else if (data.passed_credit_hours < 0) {
+            errors.passed_credit_hours = 'Passed credit hours cannot be negative.';
+        } else if (attemptedOk && data.passed_credit_hours > data.attempted_credit_hours) {
+            errors.passed_credit_hours = 'Passed credit hours cannot exceed attempted credit hours.';
+        } else if (data.passed_credit_hours > MAX_CREDITS) {
+            errors.passed_credit_hours = 'Passed credit hours must be ' + MAX_CREDITS + ' or fewer.';
+        }
+
+        if (data.semester_gpa === null) {
+            errors.semester_gpa = 'Semester GPA is required.';
+        } else if (data.semester_gpa < 0 || data.semester_gpa > MAX_GPA) {
+            errors.semester_gpa = 'Please enter a GPA between 0.00 and 4.00.';
+        }
+
+        if (data.career_gpa === null) {
+            errors.career_gpa = 'Career GPA is required.';
+        } else if (data.career_gpa < 0 || data.career_gpa > MAX_GPA) {
+            errors.career_gpa = 'Please enter a GPA between 0.00 and 4.00.';
+        }
+
         return errors;
     }
 
-    /* ---------------- Steps ---------------- */
-    function showStep(stepId) {
-        var order = [STEP.FORM, STEP.REVIEW, STEP.CONFIRM];
-        order.forEach(function (id) {
-            var panel = $(id);
-            panel.hidden = id !== stepId;
-            panel.setAttribute('aria-hidden', id !== stepId ? 'true' : 'false');
+    /* ----------------------------------------------------------------
+       Error rendering
+       ---------------------------------------------------------------- */
+    function applyErrors(errors) {
+        var keys = ['student_id', 'last_name', 'first_name', 'major', 'classification',
+            'academic_year', 'semester', 'attempted_credit_hours', 'passed_credit_hours',
+            'semester_gpa', 'career_gpa'];
+        keys.forEach(function (key) {
+            var box = $(key + '_err');
+            var wrap = document.querySelector('.field[data-field="' + key + '"]');
+            if (box) box.textContent = errors[key] || '';
+            if (wrap) wrap.classList.toggle('has-error', Boolean(errors[key]));
         });
-        var stepIndex = order.indexOf(stepId);
-        document.querySelectorAll('#stepsList .step').forEach(function (s, i) {
-            var active = i === stepIndex;
-            var done = i < stepIndex;
-            s.classList.toggle('active', active);
-            s.classList.toggle('done', done);
-            if (active) s.setAttribute('aria-current', 'true');
-            else s.removeAttribute('aria-current');
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
 
-    /* ---------------- Review render ---------------- */
-    function gather() {
-        var data = {};
-        FIELDS.forEach(function (name) {
-            data[name] = el(name).value.trim();
-        });
-        return data;
-    }
-
-    function fmt2(n) { return Number(n).toFixed(2); }
-
-    function group(title, rows) {
-        return '<section class="review-group">' +
-            '<h3>' + window.PS.escape(title) + '</h3>' +
-            '<dl class="review-list">' + rows.map(function (r) {
-                return '<div><dt>' + window.PS.escape(r.k) + '</dt><dd>' + r.v + '</dd></div>';
-            }).join('') + '</dl></section>';
-    }
-
-    function row(k, v) {
-        return { k: k, v: window.PS.escape(v === null || v === undefined ? '—' : v) };
-    }
-
-    function renderReview(data) {
-        $('reviewBody').innerHTML =
-            group('Student Information', [
-                row('Student ID', data.student_id),
-                row('Name', data.first_name + ' ' + data.last_name),
-                row('Major', data.major),
-                row('Classification', data.classification)
-            ]) +
-            group('Semester Information', [
-                row('Academic Year', data.academic_year),
-                row('Semester', data.semester)
-            ]) +
-            group('Academic Performance', [
-                row('Attempted Credit Hours', data.attempted_credit_hours),
-                row('Passed Credit Hours', data.passed_credit_hours),
-                row('Semester GPA', fmt2(data.semester_gpa)),
-                row('Career GPA', fmt2(data.career_gpa))
-            ]);
-        showStep(STEP.REVIEW);
-        var heading = $('reviewTitle');
-        heading.setAttribute('tabindex', '-1');
-        heading.focus({ preventScroll: true });
-    }
-
-    /* ---------------- Confirmation render ---------------- */
-    function fmtSubmitted(value) {
-        if (!value) return '—';
-        var d = new Date(String(value).replace(' ', 'T'));
-        if (isNaN(d)) return value;
-        return d.toLocaleString(undefined, {
-            year: 'numeric', month: 'long', day: 'numeric',
-            hour: 'numeric', minute: '2-digit'
-        });
-    }
-
-    function detail(k, v, mono) {
-        return '<div><dt>' + window.PS.escape(k) + '</dt><dd' + (mono ? ' class="mono"' : '') + '>' +
-            window.PS.escape(v === null || v === undefined ? '—' : v) + '</dd></div>';
-    }
-
-    function renderConfirmation(res) {
-        var s = res.summary || {};
-        $('confirmDetails').innerHTML =
-            detail('Confirmation Number', res.reference, true) +
-            detail('Student ID', s.student_id, true) +
-            detail('Student Name', s.student_name) +
-            detail('Semester', s.semester) +
-            detail('Academic Year', s.academic_year) +
-            detail('Submission Date &amp; Time', fmtSubmitted(res.submitted_at));
-        showStep(STEP.CONFIRM);
-        var heading = $('confirmTitle');
-        heading.setAttribute('tabindex', '-1');
-        heading.focus({ preventScroll: true });
-        window.PS.toast('success', res.message || 'Report submitted.');
-        celebrate();
-    }
-
-    function celebrate() {
-        var emblem = document.querySelector('.confirm-emblem');
-        if (emblem) {
-            emblem.classList.remove('draw');
-            void emblem.offsetWidth;
-            emblem.classList.add('draw');
-        }
-    }
-
-    /* ---------------- Submit ---------------- */
-    var submitBtn = $('submitBtn');
-    var submitText = submitBtn.querySelector('.btn-text');
-
-    function submitLoading(on) {
-        submitBtn.disabled = on;
-        if (on) {
-            submitText.innerHTML = '<span class="spinner" aria-hidden="true"></span> Submitting…';
+        var count = Object.keys(errors).length;
+        if (count) {
+            errorList.innerHTML = '';
+            var names = {
+                student_id: 'Student ID', last_name: 'Last Name', first_name: 'First Name',
+                major: 'Major', classification: 'Classification',
+                academic_year: 'Academic Year', semester: 'Semester',
+                attempted_credit_hours: 'Attempted Credit Hours',
+                passed_credit_hours: 'Passed Credit Hours',
+                semester_gpa: 'Semester GPA', career_gpa: 'Career GPA',
+            };
+            Object.keys(errors).forEach(function (key) {
+                var li = document.createElement('li');
+                var a = document.createElement('a');
+                a.href = '#' + key;
+                a.textContent = names[key] + ': ' + errors[key];
+                a.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var el = $(key);
+                    if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                });
+                li.appendChild(a);
+                errorList.appendChild(li);
+            });
+            errorSummary.hidden = false;
+            errorSummary.focus();
         } else {
-            submitText.textContent = 'Submit Report';
+            errorSummary.hidden = true;
         }
     }
 
-    function submitReport() {
-        submitLoading(true);
-        var payload = { website_url: $('website_url').value };
-        FIELDS.forEach(function (name) {
-            payload[name] = el(name).value.trim();
+    function clearErrors() {
+        applyErrors({});
+    }
+
+    /* ----------------------------------------------------------------
+       Section completion ticks
+       ---------------------------------------------------------------- */
+    function sectionStatus(data) {
+        var sec1 = data.student_id && data.last_name && data.first_name &&
+            data.major && data.classification;
+        var sec2 = data.academic_year && data.semester;
+        var sec3 = data.attempted_credit_hours !== null && data.passed_credit_hours !== null &&
+            data.semester_gpa !== null && data.career_gpa !== null;
+        var checks = document.querySelectorAll('.sec-check[data-check]');
+        checks.forEach(function (el) {
+            var n = Number(el.getAttribute('data-check'));
+            el.classList.toggle('on', n === 1 ? sec1 : n === 2 ? sec2 : sec3);
         });
+    }
+
+    /* ----------------------------------------------------------------
+       Review screen
+       ---------------------------------------------------------------- */
+    function fmtCredits(n) {
+        return n === null || n === undefined ? '-' : killTrailingZeros(n);
+    }
+    function fmtGpa(n) {
+        return (typeof n === 'number' && Number.isFinite(n)) ? n.toFixed(2) : '-';
+    }
+
+    function buildReview(data) {
+        var blocks = [
+            {
+                title: 'Student Information',
+                rows: [
+                    ['Student ID', data.student_id],
+                    ['Name', (data.first_name + ' ' + data.last_name).trim()],
+                    ['Major', data.major],
+                    ['Classification', data.classification],
+                ],
+            },
+            {
+                title: 'Semester Information',
+                rows: [
+                    ['Academic Year', data.academic_year],
+                    ['Semester', data.semester],
+                ],
+            },
+            {
+                title: 'Academic Performance',
+                rows: [
+                    ['Attempted Credit Hours', fmtCredits(data.attempted_credit_hours)],
+                    ['Passed Credit Hours', fmtCredits(data.passed_credit_hours)],
+                    ['Semester GPA', fmtGpa(data.semester_gpa)],
+                    ['Career GPA', fmtGpa(data.career_gpa)],
+                ],
+            },
+        ];
+
+        reviewBlocks.innerHTML = blocks.map(function (block) {
+            return '<div class="review-block">' +
+                '<h3>' + window.PS.escape(block.title) + '</h3>' +
+                '<dl>' + block.rows.map(function (row) {
+                    return '<div class="rv-list"><dt>' + window.PS.escape(row[0]) +
+                        '</dt><dd>' + window.PS.escape(row[1] === null ? '' : row[1]) + '</dd></div>';
+                }).join('') + '</dl></div>';
+        }).join('');
+    }
+
+    /* ----------------------------------------------------------------
+       View switching
+       ---------------------------------------------------------------- */
+    function showView(view) {
+        viewForm.hidden = view !== 'form';
+        viewReview.hidden = view !== 'review';
+        viewSuccess.hidden = view !== 'success';
+
+        var step = view === 'form' ? 1 : view === 'review' ? 2 : 3;
+        document.querySelectorAll('.step').forEach(function (el, i) {
+            el.classList.toggle('is-active', i + 1 === step);
+            el.classList.toggle('is-done', i + 1 < step);
+        });
+
+        if (view !== 'form') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    /* ----------------------------------------------------------------
+       Submission
+       ---------------------------------------------------------------- */
+    function submitReport(data) {
+        var btn = $('submitBtn');
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+        btn.setAttribute('aria-busy', 'true');
 
         window.PS.ensureCsrf()
             .then(function () {
-                return window.PS.api('/api/reports', { method: 'POST', body: payload });
+                return window.PS.api('/api/reports', {
+                    method: 'POST',
+                    body: {
+                        student_id: data.student_id,
+                        last_name: data.last_name,
+                        first_name: data.first_name,
+                        major: data.major,
+                        classification: data.classification,
+                        academic_year: data.academic_year,
+                        semester: data.semester,
+                        attempted_credit_hours: data.attempted_credit_hours,
+                        passed_credit_hours: data.passed_credit_hours,
+                        semester_gpa: data.semester_gpa,
+                        career_gpa: data.career_gpa,
+                    },
+                });
             })
             .then(function (res) {
-                submitLoading(false);
-                renderConfirmation(res);
+                renderSuccess(res);
+                showView('success');
             })
             .catch(function (err) {
-                submitLoading(false);
+                btn.disabled = false;
+                btn.classList.remove('is-loading');
+
                 if (err.status === 409) {
-                    showStep(STEP.REVIEW);
-                    duplicateAlert.textContent = err.data.error || 'A report for this student and semester has already been submitted.';
-                    duplicateAlert.hidden = false;
-                    window.PS.toast('error', duplicateAlert.textContent);
+                    window.PS.toast('error', err.data.error || 'This report has already been submitted.');
+                    showView('form');
                     return;
                 }
-                if (err.status === 422 && err.data && err.data.errors) {
-                    showStep(STEP.FORM);
-                    var mapped = {};
-                    Object.keys(err.data.errors).forEach(function (name) {
-                        setError(name, err.data.errors[name]);
-                        mapped[name] = { message: err.data.errors[name] };
-                    });
-                    showSummary(mapped);
-                    window.PS.toast('error', 'Please fix the highlighted fields.');
-                } else {
-                    window.PS.toast('error', err.message || 'Something went wrong.');
+                if (err.data && err.data.errors) {
+                    applyErrors(err.data.errors);
+                    window.PS.toast('error', 'Please correct the highlighted fields below.');
+                    showView('form');
+                    return;
                 }
+                window.PS.toast('error', err.message || 'Unable to submit your report. Please try again.');
+                showView('form');
             });
     }
 
-    /* ---------------- Wire events ---------------- */
+    function renderSuccess(res) {
+        var s = res.summary || {};
+        $('confReference').textContent = s.reference || res.reference || '';
+        $('confStudentId').textContent = s.student_id || '';
+        $('confStudentName').textContent = s.student_name || '';
+        $('confSemester').textContent = s.semester || '';
+        $('confYear').textContent = s.academic_year || '';
+
+        var when = res.submitted_at ? new Date(String(res.submitted_at).replace(' ', 'T')) : null;
+        if (when && !isNaN(when)) {
+            $('confDate').textContent = when.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+            $('confTime').textContent = when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        } else {
+            $('confDate').textContent = '';
+            $('confTime').textContent = '';
+        }
+    }
+
+    function resetForm() {
+        form.reset();
+        clearErrors();
+        sectionStatus(collect());
+    }
+
+    /* ----------------------------------------------------------------
+       Wire-up
+       ---------------------------------------------------------------- */
+    function loadMeta() {
+        return window.PS.api('/api/meta').then(function (m) {
+            META = m;
+            var classSel = $('classification');
+            var semSel = $('semester');
+            var yearSel = $('academic_year');
+
+            (m.classifications || []).forEach(function (c) {
+                var opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                classSel.appendChild(opt);
+            });
+            (m.semesters || []).forEach(function (s) {
+                var opt = document.createElement('option');
+                opt.value = s; opt.textContent = s;
+                semSel.appendChild(opt);
+            });
+            (m.academic_years || []).forEach(function (y) {
+                var opt = document.createElement('option');
+                opt.value = y; opt.textContent = y;
+                yearSel.appendChild(opt);
+            });
+        });
+    }
+
     form.addEventListener('submit', function (e) {
         e.preventDefault();
-        duplicateAlert.hidden = true;
-        hideSummary();
-        var errors = validateAll();
+        var data = collect();
+        var errors = validate(data);
+        applyErrors(errors);
+        sectionStatus(data);
+
         if (Object.keys(errors).length) {
-            showSummary(errors);
-            window.PS.toast('error', 'Please fix the highlighted fields.');
+            window.PS.toast('error', 'Please correct the highlighted fields below.');
             return;
         }
-        renderReview(gather());
+
+        buildReview(data);
+        showView('review');
     });
 
     $('editBtn').addEventListener('click', function () {
-        duplicateAlert.hidden = true;
-        showStep(STEP.FORM);
+        showView('form');
+        $('reportForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    submitBtn.addEventListener('click', function () {
-        submitReport();
+    $('submitBtn').addEventListener('click', function () {
+        var data = collect();
+        var errors = validate(data);
+        if (Object.keys(errors).length) {
+            applyErrors(errors);
+            showView('form');
+            return;
+        }
+        submitReport(data);
     });
 
     $('againBtn').addEventListener('click', function () {
-        form.reset();
-        clearAllErrors();
-        duplicateAlert.hidden = true;
-        showStep(STEP.FORM);
+        resetForm();
+        showView('form');
     });
 
-    FIELDS.forEach(function (name) {
-        var input = el(name);
-        if (!input) return;
-        input.addEventListener('blur', function () {
-            var err = validateField(name, input.value);
-            setError(name, err ? err.message : null);
-        });
-        input.addEventListener('input', function () {
-            var field = fieldEl(name);
-            if (field && field.classList.contains('has-err')) {
-                var err = validateField(name, input.value);
-                setError(name, err ? err.message : null);
-            }
-            markSectionDone();
-        });
-        input.addEventListener('change', function () {
-            var field = fieldEl(name);
-            if (field && field.classList.contains('has-err')) {
-                var err = validateField(name, input.value);
-                setError(name, err ? err.message : null);
-            }
-            markSectionDone();
-        });
-    });
-
-    function markSectionDone() {
-        var sections = {
-            sec1: ['student_id', 'last_name', 'first_name', 'major', 'classification'],
-            sec2: ['academic_year', 'semester'],
-            sec3: ['attempted_credit_hours', 'passed_credit_hours', 'semester_gpa', 'career_gpa']
-        };
-        Object.keys(sections).forEach(function (secId) {
-            var done = sections[secId].every(function (name) {
-                return el(name) && el(name).value.trim() !== '';
+    ['student_id', 'last_name', 'first_name', 'major', 'classification',
+        'academic_year', 'semester', 'attempted_credit_hours', 'passed_credit_hours',
+        'semester_gpa', 'career_gpa'].forEach(function (key) {
+        var el = $(key);
+        if (el) {
+            el.addEventListener('input', function () {
+                var d = collect();
+                clearErrors();
+                sectionStatus(d);
             });
-            var sec = $(secId);
-            if (sec) sec.classList.toggle('done', done);
-        });
-    }
+        }
+    });
 
-    /* ---------------- Boot ---------------- */
-    loadMeta();
-    markSectionDone();
-    window.PS.ensureCsrf();
-    document.getElementById('footYear').textContent = String(new Date().getFullYear());
+    document.getElementById('footYear').textContent = new Date().getFullYear();
+
+    loadMeta().catch(function () {
+        // The page still works when meta fails only if lists were static
+        // (they are not); show a message telling the user to retry.
+        window.PS.toast('error', 'Unable to load the form options. Please refresh the page.');
+    });
 })();

@@ -6,8 +6,9 @@
  * Presidential Scholars Academic Reporting Portal - Node.js + SQLite
  * server.
  *
- *   Student portal : http://localhost:3000/   (also /submit)
- *   Admin area     : http://localhost:3000/admin
+ *   Student form :  http://localhost:3000/
+ *   Admin login  :  http://localhost:3000/admin
+ *   Dashboard    :  http://localhost:3000/admin/dashboard
  *
  * Run with:  node server.js
  * -----------------------------------------------------------------
@@ -97,7 +98,7 @@ const SECURITY_HEADERS = {
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'same-origin',
     'Content-Security-Policy':
-        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; form-action 'self'",
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; base-uri 'self'; form-action 'self'",
 };
 
 function applySecurityHeaders(res) {
@@ -228,15 +229,13 @@ function csvCell(value) {
     return `"${v.replace(/"/g, '""')}"`;
 }
 
-function statusLabel(s) {
-    return {
-        pending: 'Submitted',
-        verified: 'Reviewed',
-        rejected: 'Rejected',
-        needs_correction: 'Needs Correction',
-        archived: 'Archived',
-    }[s] || s || 'Submitted';
-}
+const statusLabel = (s) => ({
+    pending: 'Pending Review',
+    verified: 'Verified',
+    rejected: 'Rejected',
+    needs_correction: 'Needs Correction',
+    archived: 'Archived',
+}[s] || s || '');
 
 /* ================================================================
  |  API routes
@@ -270,7 +269,7 @@ async function handleApi(req, res, url) {
         });
     }
 
-    /* ---------- public: submit a report ---------- */
+    /* ---------- public: submit a semester report ---------- */
     if (pathname === '/api/reports' && method === 'POST') {
         const ip = clientIp(req);
         if (!rateLimit(`submit:${ip}`, 20, 60 * 60 * 1000)) {
@@ -294,11 +293,11 @@ async function handleApi(req, res, url) {
             return sendJson(res, 422, { error: 'Please correct the highlighted fields.', errors });
         }
 
-        // Duplicate protection: one report per student per academic term.
-        if (await reports.findSemesterDuplicate(data)) {
+        // Duplicate protection: one report per student per term.
+        const existing = await reports.findTermDuplicate(data);
+        if (existing) {
             return sendJson(res, 409, {
                 error: 'A report for this student and semester has already been submitted.',
-                code: 'duplicate_term',
             });
         }
 
@@ -313,15 +312,15 @@ async function handleApi(req, res, url) {
             review_status: 'pending',
             summary: {
                 student_id: saved.student_id,
-                student_name: `${saved.first_name} ${saved.last_name}`,
-                major: saved.major,
-                classification: saved.classification,
-                academic_year: saved.academic_year,
+                student_name: `${saved.first_name} ${saved.last_name}`.trim(),
                 semester: saved.semester,
+                academic_year: saved.academic_year,
+                classification: saved.classification,
+                major: saved.major,
                 attempted_credit_hours: saved.attempted_credit_hours,
                 passed_credit_hours: saved.passed_credit_hours,
-                semester_gpa: saved.semester_gpa,
-                career_gpa: saved.career_gpa,
+                semester_gpa: saved.semester_gpa.toFixed(2),
+                career_gpa: saved.career_gpa.toFixed(2),
                 reference,
             },
             message: 'Your report has been submitted successfully. Thank you.',
@@ -405,14 +404,27 @@ async function handleApi(req, res, url) {
     }
 
     /* ---------- admin: everything below needs a session ---------- */
+
+    const filtersFrom = () => ({
+        q: url.searchParams.get('q') || '',
+        classification: url.searchParams.get('classification') || '',
+        semester: url.searchParams.get('semester') || '',
+        review_status: url.searchParams.get('review_status') || '',
+        academic_year: url.searchParams.get('academic_year') || '',
+        major: url.searchParams.get('major') || '',
+    });
+
     if (pathname === '/api/admin/stats' && method === 'GET') {
         if (!(await requireAdmin(req, res))) return;
-        return sendJson(res, 200, await reports.stats());
+        return sendJson(res, 200, await reports.stats(filtersFrom()));
     }
 
     if (pathname === '/api/admin/years' && method === 'GET') {
         if (!(await requireAdmin(req, res))) return;
-        return sendJson(res, 200, { years: await reports.academicYears() });
+        const stored = await reports.academicYears();
+        const offered = academicYearOptions();
+        const years = Array.from(new Set([...stored, ...offered])).sort().reverse();
+        return sendJson(res, 200, { years });
     }
 
     if (pathname === '/api/admin/majors' && method === 'GET') {
@@ -424,33 +436,26 @@ async function handleApi(req, res, url) {
         const admin = await requireAdmin(req, res);
         if (!admin) return;
 
-        const filters = {
-            q: url.searchParams.get('q') || '',
-            classification: url.searchParams.get('classification') || '',
-            semester: url.searchParams.get('semester') || '',
-            academic_year: url.searchParams.get('academic_year') || '',
-            major: url.searchParams.get('major') || '',
-            review_status: url.searchParams.get('review_status') || '',
-            date_from: url.searchParams.get('date_from') || '',
-            date_to: url.searchParams.get('date_to') || '',
-        };
+        const filters = filtersFrom();
         const rows = await reports.allReports(filters);
         const stamp = new Date().toISOString().slice(0, 10);
 
         // Internal administrator notes are never included in exports.
         const columns = [
-            'Student ID', 'Last Name', 'First Name', 'Major', 'Classification',
-            'Academic Year', 'Semester', 'Attempted Credit Hours', 'Passed Credit Hours',
-            'Semester GPA', 'Career GPA', 'Submission Date', 'Status',
-            'Confirmation Reference', 'Reviewed By', 'Reviewed At', 'Last Updated',
+            'Reference', 'Student ID', 'First Name', 'Last Name',
+            'Major', 'Classification', 'Academic Year', 'Semester',
+            'Attempted Credit Hours', 'Passed Credit Hours',
+            'Semester GPA', 'Career GPA', 'Status',
+            'Reviewed By', 'Reviewed At', 'Submitted', 'Last Updated',
         ];
 
         const rowValues = (r) => [
-            r.student_id, r.last_name, r.first_name, r.major, r.classification,
-            r.academic_year, r.semester, r.attempted_credit_hours, r.passed_credit_hours,
-            r.semester_gpa, r.career_gpa, r.created_at,
-            statusLabel(r.review_status), r.confirmation_reference,
-            r.reviewed_by || '', r.reviewed_at || '', r.updated_at,
+            r.confirmation_reference, r.student_id, r.first_name, r.last_name,
+            r.major, r.classification, r.academic_year, r.semester,
+            r.attempted_credit_hours, r.passed_credit_hours,
+            r.semester_gpa.toFixed(2), r.career_gpa.toFixed(2),
+            statusLabel(r.review_status), r.reviewed_by || '', r.reviewed_at || '',
+            r.created_at, r.updated_at,
         ];
 
         const format = (url.searchParams.get('format') || 'csv').toLowerCase();
@@ -483,14 +488,7 @@ async function handleApi(req, res, url) {
     if (pathname === '/api/admin/reports' && method === 'GET') {
         if (!(await requireAdmin(req, res))) return;
         const result = await reports.listReports({
-            q: url.searchParams.get('q') || '',
-            classification: url.searchParams.get('classification') || '',
-            semester: url.searchParams.get('semester') || '',
-            academic_year: url.searchParams.get('academic_year') || '',
-            major: url.searchParams.get('major') || '',
-            review_status: url.searchParams.get('review_status') || '',
-            date_from: url.searchParams.get('date_from') || '',
-            date_to: url.searchParams.get('date_to') || '',
+            ...filtersFrom(),
             sort: url.searchParams.get('sort') || '',
             dir: url.searchParams.get('dir') || '',
             page: url.searchParams.get('page') || '',
@@ -499,7 +497,7 @@ async function handleApi(req, res, url) {
         return sendJson(res, 200, result);
     }
 
-    // Review workflow: verify, request corrections, archive / restore.
+    // Review workflow: approve / reject / request corrections, archive / restore.
     const reviewMatch = pathname.match(/^\/api\/admin\/reports\/(\d+)\/(review|archive)$/);
     if (reviewMatch) {
         const admin = await requireAdmin(req, res);
@@ -559,11 +557,11 @@ async function handleApi(req, res, url) {
             if (Object.keys(errors).length) {
                 return sendJson(res, 422, { error: 'Please correct the highlighted fields.', errors });
             }
-            // Editing into another student's term is a duplicate.
-            if (await reports.findSemesterDuplicate(data, id)) {
+            // Editing cannot move an existing row onto a term owned by another report.
+            const clash = await reports.findTermDuplicate(data);
+            if (clash && Number(clash.id) !== Number(id)) {
                 return sendJson(res, 409, {
-                    error: 'A report for this student and semester has already been submitted.',
-                    code: 'duplicate_term',
+                    error: 'Another report already exists for this student and semester.',
                 });
             }
             // Internal notes ride along with the edit payload (admin-only route).
@@ -613,8 +611,9 @@ function handler(req, res) {
         return serveStatic(req, res, '/dashboard.html');
     }
 
-    // Friendly aliases for the public submission portal.
-    if (url.pathname === '/submit' || url.pathname === '/submit/' || url.pathname === '/') {
+    // Friendly aliases for the public submission form.
+    if (url.pathname === '/submit' || url.pathname === '/submit/' ||
+        url.pathname === '/public' || url.pathname === '/public/') {
         return serveStatic(req, res, '/index.html');
     }
 
@@ -628,10 +627,10 @@ async function main() {
     server.listen(PORT, HOST, () => {
         console.log('');
         console.log('  Presidential Scholars Academic Reporting Portal');
-        console.log('  ----------------------------------------------');
-        console.log(`  Student portal : http://${HOST}:${PORT}/`);
-        console.log(`  Admin login    : http://${HOST}:${PORT}/admin`);
-        console.log(`  Dashboard      : http://${HOST}:${PORT}/admin/dashboard`);
+        console.log('  ------------------------------------------------');
+        console.log(`  Student form : http://${HOST}:${PORT}/`);
+        console.log(`  Admin login  : http://${HOST}:${PORT}/admin`);
+        console.log(`  Dashboard    : http://${HOST}:${PORT}/admin/dashboard`);
         console.log('');
         if (created) {
             console.log(`  Admin account -> ${created.fullName} (username: ${created.username}  password: ${created.password})`);
@@ -640,7 +639,7 @@ async function main() {
             }
         }
         const { db } = require('./src/db');
-        console.log(`  Database       : ${db.backend()}`);
+        console.log(`  Database     : ${db.backend()}`);
         console.log('');
     });
 }

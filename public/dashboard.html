@@ -4,330 +4,250 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>Admin Dashboard &middot; Presidential Scholars</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23031229'/%3E%3Ctext x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3EPS%3C/text%3E%3C/svg%3E">
+    <title>Dashboard &middot; Presidential Scholars</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230c2340'/%3E%3Ctext x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='%23c9a227' text-anchor='middle'%3EPS%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body class="dash">
-<a class="skip-link" href="#content">Skip to content</a>
+<a class="skip-link" href="#main">Skip to content</a>
 
-<header class="site-head dash-head">
-    <div class="container head-inner">
-        <a class="head-brand" href="/admin/dashboard">
+<div class="adm-shell">
+    <!-- ======================= SIDEBAR ======================= -->
+    <aside class="adm-side" aria-label="Admin navigation">
+        <div class="side-brand">
             <span class="crest" aria-hidden="true">
                 <svg viewBox="0 0 30 30" aria-hidden="true">
-                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#fff">PS</text>
+                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#c9a227">PS</text>
                 </svg>
             </span>
-            <span class="head-brand-text">
-                <span class="head-name">Presidential Scholars</span>
-                <span class="head-sub">Administration Dashboard</span>
-            </span>
-        </a>
-        <div class="user-menu">
-            <button type="button" id="userMenuBtn" aria-haspopup="true" aria-expanded="false">
-                <span class="user-chip">
-                    <span class="avatar" id="userAvatar" aria-hidden="true">AD</span>
-                    <span id="userName">Administrator</span>
-                    <span aria-hidden="true" style="color:#78849b">&#9662;</span>
-                </span>
-            </button>
-            <ul class="menu-list" id="userMenu" hidden>
-                <li><a href="/admin/dashboard">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
-                    Overview</a></li>
-                <li><a href="javascript:void(0)" id="pwChangeBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    Change password</a></li>
-                <li><a href="/">Student report form</a></li>
-                <li><hr style="border:0;border-top:1px solid var(--line);margin:.3rem 0"></li>
-                <li><a class="danger-item" href="javascript:void(0)" id="logoutBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-                    Sign out</a></li>
-            </ul>
+            <div>
+                <h1>Administrator Portal</h1>
+                <span class="side-sub">Presidential Scholars</span>
+            </div>
         </div>
-    </div>
-</header>
 
-<main class="dash-body" id="content">
-    <div class="container">
+        <nav class="side-nav" aria-label="Dashboard">
+            <span class="nav-hd">Reports</span>
+            <button class="nav-item active" type="button" data-view="all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+                All Reports
+            </button>
+        </nav>
 
-        <section class="dashboard-heading">
-            <span class="eyebrow">Semester Academic Reports</span>
-            <h1 style="font-size:1.5rem">Administration Overview</h1>
-        </section>
-
-        <!-- ============ Stat cards ============ -->
-        <section class="dash-grid" aria-label="Key statistics">
-            <div class="stat-card">
-                <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-5l-2 3-3-6-2 3H2"/></svg></span>
-                <span class="stat-num" id="statTotal">0</span>
-                <span class="stat-label">Total Reports</span>
-                <span class="stat-sub" id="statToday">0 submitted today</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-                <span class="stat-num" id="statTerm">0</span>
-                <span class="stat-label" id="statTermLabel">Submitted This Semester</span>
-                <span class="stat-sub" id="statTermSub">—</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 5.2 5.7.8-4.1 4 1 5.7L12 15.2 6.9 17.7l1-5.7-4.1-4 5.7-.8Z"/></svg></span>
-                <span class="stat-num" id="statAvgSem">—</span>
-                <span class="stat-label">Avg Semester GPA</span>
-                <span class="stat-sub">Across all submissions</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>
-                <span class="stat-num" id="statStudents">0</span>
-                <span class="stat-label">Total Students</span>
-                <span class="stat-sub">Distinct student IDs</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.8-7 10-4-2.2-7-5.6-7-10V6l7-3z"/></svg></span>
-                <span class="stat-num" id="statAvgCareer">—</span>
-                <span class="stat-label">Avg Career GPA</span>
-                <span class="stat-sub" id="statusLine">—</span>
-            </div>
-        </section>
-
-        <!-- ============ Reports panel ============ -->
-        <section class="panel" aria-labelledby="reportsTitle">
-            <div class="panel-head">
-                <div style="display:flex;align-items:center;gap:.8rem">
-                    <h2 id="reportsTitle">Reports</h2>
-                    <span class="panel-count" id="countTotal">—</span>
+        <div class="side-audit">
+            <div class="audit-session">
+                <span class="a-k">Signed in as</span>
+                <span class="a-name" id="sideAdminName">Administrator</span>
+                <span class="a-sub">Academic Reporting Portal</span>
+                <div class="row">
+                    <button class="btn btn-sm btn-secondary" type="button" id="navPassword">Change Password</button>
+                    <button class="btn btn-sm btn-secondary" type="button" id="navSignOut">Sign Out</button>
                 </div>
-                <div style="display:flex;gap:.5rem">
-                    <button class="btn btn-secondary btn-sm" type="button" id="exportCsvBtn">&#8681; CSV</button>
-                    <button class="btn btn-secondary btn-sm" type="button" id="exportXlsxBtn">&#8681; Excel</button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="adm-backdrop" id="sideBackdrop" aria-hidden="true"></div>
+
+    <!-- ======================= MAIN ======================= -->
+    <div class="adm-main">
+        <header class="adm-top">
+            <button class="icon-btn mobile-only" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+            <span class="ctx">Admin / <b>All Reports</b></span>
+            <div class="t-badges">
+                <span class="badge gold"><span class="bdot" aria-hidden="true"></span>Official Archive</span>
+            </div>
+            <div class="t-user">
+                <span class="t-user-name" id="topUserName">Administrator</span>
+                <button class="account-ico" id="topAvatar" type="button" aria-label="Account">A</button>
+            </div>
+        </header>
+
+        <main class="adm-content" id="main">
+            <div class="db-head">
+                <div>
+                    <p class="eyebrow">Presidential Scholars Program</p>
+                    <h1 class="db-title">Academic Reports Dashboard</h1>
+                    <p>Review, search, filter and export semester academic reports submitted by Presidential Scholars.</p>
                 </div>
             </div>
 
-            <div class="dash-toolbar">
-                <div class="search-box">
-                    <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-                    <input class="input" type="search" id="fSearch" placeholder="Search student ID, name or major…" aria-label="Search reports">
-                    <button class="search-clear" type="button" id="searchClear" aria-label="Clear search" hidden>&times;</button>
-                </div>
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="dYear">Year</label>
-                        <select class="input" id="dYear" style="font-size:.85rem"><option value="">All</option></select>
+            <!-- ======================= STAT CARDS ======================= -->
+            <section class="stats-grid" aria-label="Report summary">
+                <div class="stat-card">
+                    <div class="s-top">
+                        <span class="s-label">Total Reports</span>
+                        <span class="s-ico navy" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 13h6M9 16h6M9 10h1"/></svg>
+                        </span>
                     </div>
-                    <div class="filter-group">
-                        <label for="dSemester">Semester</label>
-                        <select class="input" id="dSemester" style="font-size:.85rem">
-                            <option value="">All</option><option>Fall</option><option>Spring</option><option>Summer</option>
+                    <div class="stat-val" id="statTotal">&mdash;</div>
+                    <div class="stat-sub">All submitted semester reports</div>
+                </div>
+
+                <div class="stat-card accent-gold">
+                    <div class="s-top">
+                        <span class="s-label">Submitted This Semester</span>
+                        <span class="s-ico gold" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+                        </span>
+                    </div>
+                    <div class="stat-val" id="statThisTerm">&mdash;</div>
+                    <div class="stat-sub" id="statThisTermSub">This term</div>
+                </div>
+
+                <div class="stat-card accent-bright">
+                    <div class="s-top">
+                        <span class="s-label">Average Semester GPA</span>
+                        <span class="s-ico bright" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4-9 4-9-4 9-4z"/><path d="M5 10.5V16c0 1.5 3 3 7 3s7-1.5 7-3v-5.5"/></svg>
+                        </span>
+                    </div>
+                    <div class="stat-val" id="statSemGpa">&mdash;</div>
+                    <div class="stat-sub">Across all submitted reports</div>
+                </div>
+
+                <div class="stat-card accent-pale">
+                    <div class="s-top">
+                        <span class="s-label">Average Career GPA</span>
+                        <span class="s-ico pale" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4-9 4-9-4 9-4z"/><path d="M5 10.5V16c0 1.5 3 3 7 3s7-1.5 7-3v-5.5"/><path d="M21 7v5"/></svg>
+                        </span>
+                    </div>
+                    <div class="stat-val" id="statCareerGpa">&mdash;</div>
+                    <div class="stat-sub">Across all submitted reports</div>
+                </div>
+
+                <div class="stat-card accent-red">
+                    <div class="s-top">
+                        <span class="s-label">Total Students</span>
+                        <span class="s-ico red" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.2 5.5-5.2s5.5 1.9 5.5 5.2"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M17.5 15.4c2 .8 3.5 2.4 3.5 4.6"/></svg>
+                        </span>
+                    </div>
+                    <div class="stat-val" id="statStudents">&mdash;</div>
+                    <div class="stat-sub">Unique scholars reporting</div>
+                </div>
+            </section>
+
+            <!-- ======================= STATUS BREAKDOWN ======================= -->
+            <section class="status-breakdown" id="statusBreakdown" aria-label="Reports by status"></section>
+
+            <!-- ======================= TOOLBAR + TABLE ======================= -->
+            <section class="card table-card" aria-label="Reports">
+                <div class="tb-toolbar">
+                    <div class="tb-row">
+                        <div class="tb-search">
+                            <svg class="tb-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <input class="input" type="search" id="fQ" placeholder="Search student ID, name, or major" autocomplete="off" aria-label="Search reports">
+                        </div>
+                        <div class="tb-exports">
+                            <button class="tb-export" id="btnExportCsv" type="button" title="Export filtered results to CSV">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 12h6M11 15l3-3-3-3M9 15h2"/></svg>
+                                <span>Export CSV</span>
+                            </button>
+                            <button class="tb-export" id="btnExportXlsx" type="button" title="Export filtered results to Excel">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M8 12.5h8M8 16h5"/></svg>
+                                <span>Export Excel</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="tb-row tb-filters">
+                        <div class="tb-field">
+                            <label for="fYear">Academic Year</label>
+                            <select class="input" id="fYear"><option value="">All</option></select>
+                        </div>
+                        <div class="tb-field">
+                            <label for="fSemester">Semester</label>
+                            <select class="input" id="fSemester">
+                                <option value="">All</option>
+                                <option>Fall</option>
+                                <option>Spring</option>
+                                <option>Summer</option>
+                            </select>
+                        </div>
+                        <div class="tb-field">
+                            <label for="fClassification">Classification</label>
+                            <select class="input" id="fClassification">
+                                <option value="">All</option>
+                                <option>Freshman</option>
+                                <option>Sophomore</option>
+                                <option>Junior</option>
+                                <option>Senior</option>
+                            </select>
+                        </div>
+                        <div class="tb-field">
+                            <label for="fMajor">Major</label>
+                            <select class="input" id="fMajor"><option value="">All</option></select>
+                        </div>
+                        <div class="tb-field">
+                            <label for="fStatus">Status</label>
+                            <select class="input" id="fStatus">
+                                <option value="">All</option>
+                                <option value="pending">Pending Review</option>
+                                <option value="verified">Verified</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="needs_correction">Needs Correction</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+                        <button class="f-reset" type="button" id="btnReset" title="Clear all filters">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+                            Clear Filters
+                        </button>
+                    </div>
+                    <div class="tb-sub">
+                        <span class="tb-count"><span class="dot" aria-hidden="true">&#9679;</span> <strong id="resultCount">Loading&hellip;</strong> <span class="muted" id="filterNote"></span></span>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data" id="reportsTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" data-sort="student_id">Student ID <span class="sort-ico"></span></th>
+                                <th scope="col" data-sort="last_name">Last Name <span class="sort-ico"></span></th>
+                                <th scope="col" data-sort="first_name">First Name <span class="sort-ico"></span></th>
+                                <th scope="col" data-sort="major">Major <span class="sort-ico"></span></th>
+                                <th scope="col" data-sort="classification">Classification <span class="sort-ico"></span></th>
+                                <th scope="col" data-sort="academic_year">Year <span class="sort-ico"></span></th>
+                                <th scope="col" data-sort="semester">Semester <span class="sort-ico"></span></th>
+                                <th scope="col" class="num" data-sort="attempted_credit_hours">Attempted <span class="sort-ico"></span></th>
+                                <th scope="col" class="num" data-sort="passed_credit_hours">Passed <span class="sort-ico"></span></th>
+                                <th scope="col" class="num" data-sort="semester_gpa">Sem GPA <span class="sort-ico"></span></th>
+                                <th scope="col" class="num" data-sort="career_gpa">Career GPA <span class="sort-ico"></span></th>
+                                <th scope="col" data-sort="created_at">Submitted <span class="sort-ico"></span></th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="tc-foot">
+                    <span class="muted small" id="rangeInfo"></span>
+                    <span class="foot-spacer" aria-hidden="true"></span>
+                    <span class="f-sort">
+                        <label class="muted small" for="fPer">Per page</label>
+                        <select class="input input-sm" id="fPer">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
                         </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="dClassification">Classification</label>
-                        <select class="input" id="dClassification" style="font-size:.85rem">
-                            <option value="">All</option><option>Freshman</option><option>Sophomore</option><option>Junior</option><option>Senior</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="dMajor">Major</label>
-                        <select class="input" id="dMajor" style="font-size:.85rem"><option value="">All</option></select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="dStatus">Status</label>
-                        <select class="input" id="dStatus" style="font-size:.85rem">
-                            <option value="">All</option>
-                            <option value="pending">Submitted</option>
-                            <option value="verified">Reviewed</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="needs_correction">Needs Correction</option>
-                            <option value="archived">Archived</option>
-                        </select>
-                    </div>
-                    <div class="filter-actions">
-                        <button class="btn btn-secondary btn-sm" type="button" id="clearFiltersBtn">Clear filters</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="table-wrap">
-                <table class="table" id="reportsTable" aria-label="Semester academic reports">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort="student_id">Student ID<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="name">Last Name<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="first_name">First Name<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="major">Major<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="classification">Class<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="academic_year">Year<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="semester">Term<span class="th-caret"></span></th>
-                            <th class="sortable td-num" data-sort="attempted_credit_hours">Att&#8209;Cr<span class="th-caret"></span></th>
-                            <th class="sortable td-num" data-sort="passed_credit_hours">Pss&#8209;Cr<span class="th-caret"></span></th>
-                            <th class="sortable td-num" data-sort="semester_gpa">Sem GPA<span class="th-caret"></span></th>
-                            <th class="sortable td-num" data-sort="career_gpa">Care&nbsp;GPA<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="created_at">Submitted<span class="th-caret"></span></th>
-                            <th class="sortable" data-sort="review_status">Status<span class="th-caret"></span></th>
-                            <th><span class="sr-only" style="position:absolute;left:-9999px">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbodyReports"></tbody>
-                </table>
-                <div class="empty" id="emptyState" hidden>
-                    <span class="empty-ico" aria-hidden="true">&#128203;</span>
-                    <strong>No reports found</strong>
-                    <span>Try adjusting your search or filters.</span>
-                </div>
-            </div>
-
-            <div class="pagination" id="pagination">
-                <span class="panel-count" id="rangeLabel">—</span>
-                <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-                    <label class="per-page">Per page
-                        <select class="input" id="perPageSel" style="font-size:.84rem">
-                            <option value="10">10</option><option value="25">25</option><option value="50">50</option>
-                        </select>
-                    </label>
+                        <span class="muted" id="pageInfo"></span>
+                    </span>
                     <div class="pager" id="pager"></div>
                 </div>
-            </div>
-        </section>
-
-    </div>
-</main>
-
-<footer class="site-foot">
-    <div class="container foot-inner">
-        <span class="foot-brand">
-            <span class="crest" aria-hidden="true">
-                <svg viewBox="0 0 30 30" aria-hidden="true">
-                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#fff">PS</text>
-                </svg>
-            </span>
-            <span class="head-brand-text">
-                <span class="head-name">Presidential Scholars</span>
-                <span class="head-sub">Administration Dashboard</span>
-            </span>
-        </span>
-        <div class="foot-copy">&copy; <span id="footYear">2026</span> Presidential Scholars Program. All rights reserved.</div>
-    </div>
-</footer>
-
-<!-- ============ Report drawer ============ -->
-<div class="backdrop" id="drawerBackdrop" hidden></div>
-<aside class="drawer" id="reportDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden>
-    <div class="drawer-head">
-        <h2 id="drawerTitle">Report</h2>
-        <button type="button" class="close" id="drawerClose" aria-label="Close">&times;</button>
-    </div>
-    <div class="drawer-body" id="drawerBody"></div>
-</aside>
-
-<!-- ============ Edit modal ============ -->
-<div class="backdrop" id="modalBackdrop" hidden></div>
-<div class="modal-card" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editTitle" hidden>
-    <span class="eyebrow">Administrator</span>
-    <h2 id="editTitle">Edit Report</h2>
-    <p class="muted small" style="margin:.4rem 0 1rem">Updates are recorded in the report audit trail.</p>
-    <form id="editForm" novalidate>
-        <div class="dl-grid">
-            <div class="field">
-                <label for="eStudentId">Student ID <span class="req">*</span></label>
-                <input class="input" id="eStudentId" maxlength="20" required>
-            </div>
-            <div class="field">
-                <label for="eLastName">Last Name <span class="req">*</span></label>
-                <input class="input" id="eLastName" maxlength="100" required>
-            </div>
-            <div class="field">
-                <label for="eFirstName">First Name <span class="req">*</span></label>
-                <input class="input" id="eFirstName" maxlength="100" required>
-            </div>
-            <div class="field">
-                <label for="eMajor">Major <span class="req">*</span></label>
-                <input class="input" id="eMajor" maxlength="150" required>
-            </div>
-            <div class="field">
-                <label for="eClass">Classification <span class="req">*</span></label>
-                <div class="select-wrap">
-                    <select class="input" id="eClass" required>
-                        <option>Freshman</option><option>Sophomore</option><option>Junior</option><option>Senior</option>
-                    </select>
-                </div>
-            </div>
-            <div class="field">
-                <label for="eYear">Academic Year <span class="req">*</span></label>
-                <div class="select-wrap">
-                    <select class="input" id="eYear" required><option></option></select>
-                </div>
-            </div>
-            <div class="field">
-                <label for="eSemester">Semester <span class="req">*</span></label>
-                <div class="select-wrap">
-                    <select class="input" id="eSemester" required><option>Fall</option><option>Spring</option><option>Summer</option></select>
-                </div>
-            </div>
-            <div class="field">
-                <label for="eAttempted">Attempted Credit Hours <span class="req">*</span></label>
-                <input class="input" type="number" id="eAttempted" min="0" max="200" step="0.5" required>
-            </div>
-            <div class="field">
-                <label for="ePassed">Passed Credit Hours <span class="req">*</span></label>
-                <input class="input" type="number" id="ePassed" min="0" max="200" step="0.5" required>
-            </div>
-            <div class="field">
-                <label for="eSemGpa">Semester GPA <span class="req">*</span></label>
-                <input class="input" type="number" id="eSemGpa" min="0" max="4" step="0.01" required>
-            </div>
-            <div class="field">
-                <label for="eCareerGpa">Career GPA <span class="req">*</span></label>
-                <input class="input" type="number" id="eCareerGpa" min="0" max="4" step="0.01" required>
-            </div>
-            <div class="field full">
-                <label for="eNotes">Internal Notes</label>
-                <textarea class="input notes-ta" id="eNotes" maxlength="2000" placeholder="Administrator-only notes (never exported)"></textarea>
-            </div>
-        </div>
-        <div class="error-text" id="editError" role="alert"></div>
-        <div class="modal-actions">
-            <button class="btn btn-secondary" type="button" id="editCancel">Cancel</button>
-            <button class="btn btn-arrow" type="submit" id="editSave">Save Changes</button>
-        </div>
-    </form>
-</div>
-
-<!-- ============ Change password modal ============ -->
-<div class="modal-card" id="pwModal" role="dialog" aria-modal="true" aria-labelledby="pwTitle" hidden>
-    <h2 id="pwTitle">Change Password</h2>
-    <p class="muted small" style="margin:.4rem 0 1rem">You will be signed out after changing your password.</p>
-    <form id="pwForm" novalidate>
-        <div class="field" style="margin-bottom:.8rem">
-            <label for="pwCurrent">Current Password</label>
-            <input class="input" type="password" id="pwCurrent" required autocomplete="current-password">
-        </div>
-        <div class="field" style="margin-bottom:.8rem">
-            <label for="pwNew">New Password</label>
-            <input class="input" type="password" id="pwNew" required autocomplete="new-password">
-        </div>
-        <div class="field" style="margin-bottom:.8rem">
-            <label for="pwConfirm">Confirm New Password</label>
-            <input class="input" type="password" id="pwConfirm" required autocomplete="new-password">
-        </div>
-        <div class="error-text" id="pwError" role="alert"></div>
-        <div class="modal-actions">
-            <button class="btn btn-secondary" type="button" id="pwCancel">Cancel</button>
-            <button class="btn btn-arrow" type="submit" id="pwSave">Update Password</button>
-        </div>
-    </form>
-</div>
-
-<!-- ============ Confirm modal ============ -->
-<div class="modal-card" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
-    <h2 id="confirmTitle">Are you sure?</h2>
-    <p class="muted" id="confirmMsg" style="margin:.6rem 0 0"></p>
-    <div class="modal-actions">
-        <button class="btn btn-secondary" type="button" id="confirmCancel">Cancel</button>
-        <button class="btn btn-danger" type="button" id="confirmOk">Confirm</button>
+            </section>
+        </main>
     </div>
 </div>
 
+<div id="overlayRoot"></div>
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 
 <script src="/assets/app.js"></script>

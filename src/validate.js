@@ -3,16 +3,15 @@
 /**
  * src/validate.js
  * -----------------------------------------------------------------
- * Server-side validation. This is the validation that actually
- * protects the database - client-side checks are only a convenience.
+ * Server-side validation for the Presidential Scholars Academic
+ * Reporting Portal. This is the validation that actually protects
+ * the database - client-side checks are only a convenience.
  * -----------------------------------------------------------------
  */
 
 const CLASSIFICATIONS = ['Freshman', 'Sophomore', 'Junior', 'Senior'];
 
 const SEMESTERS = ['Fall', 'Spring', 'Summer'];
-
-const OPPORTUNITY_TYPES = ['Internship', 'Graduate School', 'Employment'];
 
 const REVIEW_STATUSES = ['pending', 'verified', 'rejected', 'needs_correction', 'archived'];
 
@@ -39,26 +38,9 @@ function clean(value, max) {
     return out;
 }
 
-function normalizeWebsite(value) {
-    const v = clean(value);
-    if (v === '') {
-        return null;
-    }
-    const withScheme = /^https?:\/\//i.test(v) ? v : `https://${v}`;
-    try {
-        const parsed = new URL(withScheme);
-        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-            return null;
-        }
-        return parsed.toString();
-    } catch {
-        return null;
-    }
-}
-
 /**
  * Student ID: letters, numbers and dashes, 3-20 characters.
- * Keep in sync with window.PS.isValidStudentId in app.js.
+ * Kept in sync with window.PS.isValidStudentId in app.js.
  */
 function isValidStudentId(value) {
     return /^[A-Za-z0-9-]{3,20}$/.test(String(value === null || value === undefined ? '' : value).trim());
@@ -244,7 +226,6 @@ function validatePassword(password) {
 module.exports = {
     CLASSIFICATIONS,
     SEMESTERS,
-    OPPORTUNITY_TYPES,
     REVIEW_STATUSES,
     isValidStudentId,
     isAcademicYear,
@@ -252,5 +233,4 @@ module.exports = {
     currentAcademicTerm,
     validateReport,
     validatePassword,
-    normalizeWebsite,
 };

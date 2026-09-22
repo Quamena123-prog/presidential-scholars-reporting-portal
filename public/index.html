@@ -3,295 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Presidential Scholars semester academic reporting. Report your academic performance for the current semester.">
-    <title>Presidential Scholars · Academic Reporting Portal</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23031229'/%3E%3Ctext x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3EPS%3C/text%3E%3C/svg%3E">
+    <meta name="description" content="Presidential Scholars Academic Reporting Portal. Report your semester academic performance to the Presidential Scholars Program.">
+    <title>Presidential Scholars &middot; Academic Reporting Portal</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230c2340'/%3E%3Ctext x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='%23c9a227' text-anchor='middle'%3EPS%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="/assets/styles.css">
 </head>
-<body class="form">
-<a class="skip-link" href="#main">Skip to form</a>
+<body class="public-page">
+<a class="skip-link" href="#main">Skip to content</a>
 
-<!-- ============================ HEADER ============================ -->
+<!-- ====================== HEADER ====================== -->
 <header class="site-head">
     <div class="container head-inner">
-        <a class="head-brand" href="/" aria-label="Presidential Scholars Academic Reporting Portal home">
+        <a class="head-brand" href="/" aria-label="Presidential Scholars Program home">
             <span class="crest" aria-hidden="true">
                 <svg viewBox="0 0 30 30" aria-hidden="true">
-                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#fff">PS</text>
+                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#c9a227">PS</text>
                 </svg>
             </span>
-            <span class="head-brand-text">
+            <span class="head-txt">
                 <span class="head-name">Presidential Scholars</span>
                 <span class="head-sub">Academic Reporting Portal</span>
             </span>
         </a>
-        <a class="head-admin" href="/admin">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-            <span>Administrator sign in</span>
-        </a>
+        <nav class="head-actions" aria-label="Primary">
+            <a class="btn btn-secondary btn-sm" href="/admin">Administrator Sign In</a>
+        </nav>
     </div>
 </header>
-
-<!-- ============================ STEPS ============================ -->
-<div class="steps-bar" id="stepsBar">
-    <div class="container">
-        <ol class="steps" id="stepsList" aria-label="Submission progress">
-            <li class="step active" data-step="1" aria-current="true">
-                <span class="step-num" aria-hidden="true">1</span>
-                <span class="step-label"><strong>Fill In</strong><small>Semester report</small></span>
-            </li>
-            <li class="step" data-step="2">
-                <span class="step-num" aria-hidden="true">2</span>
-                <span class="step-label"><strong>Review</strong><small>Check your entries</small></span>
-            </li>
-            <li class="step" data-step="3">
-                <span class="step-num" aria-hidden="true">3</span>
-                <span class="step-label"><strong>Submitted</strong><small>Confirmation</small></span>
-            </li>
-        </ol>
-    </div>
-</div>
 
 <main id="main">
     <div class="container">
 
-        <section class="hero">
-            <span class="pill"><span class="bdot" aria-hidden="true"></span>Official Semester Academic Report</span>
-            <h1>Presidential Scholars<br><span class="h-gold">Academic Reporting Portal</span></h1>
-            <p class="lead">Please complete this form to report your academic performance for the current semester. The information is submitted directly to the Presidential Scholars Program for review and record.</p>
-            <div class="how-row">
-                <span class="how-item"><span class="how-num" aria-hidden="true">1</span>Fill in your semester information</span>
-                <span class="how-arrow" aria-hidden="true">&rarr;</span>
-                <span class="how-item"><span class="how-num" aria-hidden="true">2</span>Review your report</span>
-                <span class="how-arrow" aria-hidden="true">&rarr;</span>
-                <span class="how-item"><span class="how-num" aria-hidden="true">3</span>Submit for confirmation</span>
-            </div>
+        <!-- ====================== STEP 1: FILL OUT ====================== -->
+        <section class="public-hero" aria-labelledby="pageTitle">
+            <span class="pill"><span class="bdot" aria-hidden="true"></span>Official Semester Report</span>
+            <h1 id="pageTitle">Submit Semester Report</h1>
+            <p class="lead">Please complete this form to report your academic performance for the current semester.</p>
         </section>
 
-        <div id="appShell">
-
-            <!-- ============ STEP 1 · THE FORM ============ -->
-            <section class="step-panel" id="stepForm" aria-labelledby="formTitle">
-                <div class="card form-card">
-                    <div class="form-head">
-                        <span class="eyebrow">Student Submission Form</span>
-                        <h2 id="formTitle">Submit Semester Report</h2>
-                        <p>Complete the three sections below. Fields marked <span class="req" aria-hidden="true">*</span> are required.</p>
-                    </div>
-
-                    <form id="reportForm" novalidate>
-                        <input type="text" name="website_url" id="website_url" tabindex="-1" autocomplete="off"
-                               style="position:absolute;left:-9999px" aria-hidden="true">
-
-                        <div class="error-summary" id="errorSummary" role="alert" tabindex="-1" hidden>
-                            <h2>There is a problem</h2>
-                            <ul id="errorList"></ul>
-                        </div>
-
-                        <div class="alert alert-warn" id="duplicateAlert" role="alert" hidden></div>
-
-                        <!-- SECTION 1 · STUDENT INFORMATION -->
-                        <section class="form-section" id="sec1" aria-labelledby="sec1Title">
-                            <div class="sec-head">
-                                <span class="sec-num" aria-hidden="true">1</span>
-                                <h3 id="sec1Title">Student Information</h3>
-                                <span class="sec-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
-                            </div>
-                            <div class="grid">
-                                <div class="field" data-field="student_id">
-                                    <label for="fStudentId">Student ID <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="text" id="fStudentId" name="student_id" maxlength="20"
-                                           inputmode="numeric" placeholder="e.g. 123456" autocomplete="off"
-                                           required aria-describedby="student_id_hint student_id_err" aria-invalid="false">
-                                    <span class="hint" id="student_id_hint">As it appears in the program registry.</span>
-                                    <span class="error-text" id="student_id_err"></span>
-                                </div>
-                                <div class="field" data-field="last_name">
-                                    <label for="fLastName">Last Name <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="text" id="fLastName" name="last_name" maxlength="100"
-                                           placeholder="Last name" autocomplete="family-name" required aria-describedby="last_name_err" aria-invalid="false">
-                                    <span class="error-text" id="last_name_err"></span>
-                                </div>
-                                <div class="field" data-field="first_name">
-                                    <label for="fFirstName">First Name <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="text" id="fFirstName" name="first_name" maxlength="100"
-                                           placeholder="First name" autocomplete="given-name" required aria-describedby="first_name_err" aria-invalid="false">
-                                    <span class="error-text" id="first_name_err"></span>
-                                </div>
-                                <div class="field" data-field="major">
-                                    <label for="fMajor">Major <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="text" id="fMajor" name="major" maxlength="150"
-                                           placeholder="e.g. Computer and Information Systems" required aria-describedby="major_err" aria-invalid="false">
-                                    <span class="error-text" id="major_err"></span>
-                                </div>
-                                <div class="field" data-field="classification">
-                                    <label for="fClassification">Classification <span class="req" aria-hidden="true">*</span></label>
-                                    <div class="select-wrap">
-                                        <select class="input" id="fClassification" name="classification" required aria-describedby="classification_err" aria-invalid="false">
-                                            <option value="">Select classification</option>
-                                            <option>Freshman</option>
-                                            <option>Sophomore</option>
-                                            <option>Junior</option>
-                                            <option>Senior</option>
-                                        </select>
-                                    </div>
-                                    <span class="error-text" id="classification_err"></span>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 2 · SEMESTER INFORMATION -->
-                        <section class="form-section" id="sec2" aria-labelledby="sec2Title">
-                            <div class="sec-head">
-                                <span class="sec-num" aria-hidden="true">2</span>
-                                <h3 id="sec2Title">Semester Information</h3>
-                                <span class="sec-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
-                            </div>
-                            <div class="grid">
-                                <div class="field" data-field="academic_year">
-                                    <label for="fYear">Academic Year <span class="req" aria-hidden="true">*</span></label>
-                                    <div class="select-wrap">
-                                        <select class="input" id="fYear" name="academic_year" required aria-describedby="year_err" aria-invalid="false">
-                                            <option value="">Select academic year</option>
-                                        </select>
-                                    </div>
-                                    <span class="hint">The academic year this semester belongs to, e.g. 2026–2027.</span>
-                                    <span class="error-text" id="year_err"></span>
-                                </div>
-                                <div class="field" data-field="semester">
-                                    <label for="fSemester">Semester <span class="req" aria-hidden="true">*</span></label>
-                                    <div class="select-wrap">
-                                        <select class="input" id="fSemester" name="semester" required aria-describedby="semester_err" aria-invalid="false">
-                                            <option value="">Select semester</option>
-                                            <option>Fall</option>
-                                            <option>Spring</option>
-                                            <option>Summer</option>
-                                        </select>
-                                    </div>
-                                    <span class="error-text" id="semester_err"></span>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 3 · ACADEMIC PERFORMANCE -->
-                        <section class="form-section" id="sec3" aria-labelledby="sec3Title">
-                            <div class="sec-head">
-                                <span class="sec-num" aria-hidden="true">3</span>
-                                <h3 id="sec3Title">Academic Performance</h3>
-                                <span class="sec-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
-                            </div>
-                            <div class="grid">
-                                <div class="field" data-field="attempted_credit_hours">
-                                    <label for="fAttempted">Attempted Credit Hours <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="number" id="fAttempted" name="attempted_credit_hours" min="0" max="200" step="0.5"
-                                           inputmode="decimal" placeholder="e.g. 15" required aria-describedby="attempted_err" aria-invalid="false">
-                                    <span class="hint">The number of credit hours you attempted this semester.</span>
-                                    <span class="error-text" id="attempted_err"></span>
-                                </div>
-                                <div class="field" data-field="passed_credit_hours">
-                                    <label for="fPassed">Passed Credit Hours <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="number" id="fPassed" name="passed_credit_hours" min="0" max="200" step="0.5"
-                                           inputmode="decimal" placeholder="e.g. 15" required aria-describedby="passed_err" aria-invalid="false">
-                                    <span class="hint">Cannot exceed attempted credit hours.</span>
-                                    <span class="error-text" id="passed_err"></span>
-                                </div>
-                                <div class="field" data-field="semester_gpa">
-                                    <label for="fSemGpa">Semester GPA <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="number" id="fSemGpa" name="semester_gpa" min="0" max="4.00" step="0.01"
-                                           inputmode="decimal" placeholder="e.g. 3.85" required aria-describedby="semgpa_err" aria-invalid="false">
-                                    <span class="hint">0.00 – 4.00, to two decimal places.</span>
-                                    <span class="error-text" id="semgpa_err"></span>
-                                </div>
-                                <div class="field" data-field="career_gpa">
-                                    <label for="fCareerGpa">Career GPA <span class="req" aria-hidden="true">*</span></label>
-                                    <input class="input" type="number" id="fCareerGpa" name="career_gpa" min="0" max="4.00" step="0.01"
-                                           inputmode="decimal" placeholder="e.g. 3.90" required aria-describedby="careergpa_err" aria-invalid="false">
-                                    <span class="hint">0.00 – 4.00, to two decimal places.</span>
-                                    <span class="error-text" id="careergpa_err"></span>
-                                </div>
-                            </div>
-                        </section>
-
-                        <div class="submit-strip">
-                            <span class="strip-note">
-                                <svg class="s-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.4-3 7.8-7 10-4-2.2-7-5.6-7-10V6l7-3z"/><path d="M8.8 12l2.2 2.2 4.2-4.4"/></svg>
-                                <span>You will review your report before the final submission.</span>
-                            </span>
-                            <button class="btn btn-lg btn-arrow" type="submit" id="reviewBtn">
-                                <span class="btn-text">Review Report</span><span class="arr" aria-hidden="true">&rarr;</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- ============ STEP 2 · REVIEW ============ -->
-            <section class="step-panel" id="stepReview" hidden aria-hidden="true" aria-labelledby="reviewTitle">
-                <div class="card review-card">
-                    <div class="form-head">
-                        <span class="eyebrow">Review Before Submission</span>
-                        <h2 id="reviewTitle">Review Your Report</h2>
-                        <p>Please confirm the information below is correct before submitting.</p>
-                    </div>
-
-                    <div class="review-body" id="reviewBody"></div>
-
-                    <div class="review-actions">
-                        <button class="btn btn-secondary btn-lg" type="button" id="editBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                            Edit Information
-                        </button>
-                        <button class="btn btn-lg btn-arrow" type="button" id="submitBtn">
-                            <span class="btn-text">Submit Report</span><span class="arr" aria-hidden="true">&rarr;</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ============ STEP 3 · CONFIRMATION ============ -->
-            <section class="step-panel" id="stepConfirm" hidden aria-hidden="true" aria-labelledby="confirmTitle">
-                <div class="card confirm-card">
-                    <div class="confirm-hero">
-                        <span class="confirm-emblem" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.5"/></svg>
-                        </span>
-                        <span class="pill"><span class="bdot" aria-hidden="true"></span>Report Submitted Successfully</span>
-                        <h2 id="confirmTitle">Thank you. Your report has been submitted.</h2>
-                        <p class="confirm-desc">Your Presidential Scholars semester academic report has been successfully submitted and recorded. Please keep the reference below for your records.</p>
-
-                        <div class="confirm-details" id="confirmDetails"></div>
-
-                        <button class="btn btn-secondary btn-lg" type="button" id="againBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
-                            Submit Another Report
-                        </button>
-                    </div>
-                </div>
-            </section>
-
+        <div class="steps" id="stepBar" role="list" aria-label="Report progress">
+            <div class="step is-active" data-step="1" role="listitem"><span class="step-num">1</span> Fill In</div>
+            <div class="step" data-step="2" role="listitem"><span class="step-num">2</span> Review</div>
+            <div class="step" data-step="3" role="listitem"><span class="step-num">3</span> Submitted</div>
         </div>
+
+        <!-- ====================== FORM VIEW ====================== -->
+        <div class="card form-card reveal" id="viewForm">
+            <div class="form-head">
+                <h2>Semester Academic Report</h2>
+                <p>Complete each section below. Fields marked <span class="req" aria-hidden="true">*</span> are required.</p>
+            </div>
+
+            <form id="reportForm" novalidate>
+                <input type="text" name="website_url" id="website_url" tabindex="-1" autocomplete="off"
+                       class="hp-field" aria-hidden="true">
+
+                <div class="error-summary" id="errorSummary" role="alert" tabindex="-1" hidden>
+                    <h2><strong>There is a problem</strong></h2>
+                    <ul id="errorList"></ul>
+                </div>
+
+                <!-- SECTION 1: STUDENT INFORMATION -->
+                <section class="form-section" id="sec1" aria-labelledby="sec1Title">
+                    <div class="sec-head">
+                        <span class="sec-n" aria-hidden="true">1</span>
+                        <div class="sec-title"><h2 id="sec1Title">Student Information</h2></div>
+                        <span class="sec-check" aria-hidden="true" data-check="1">&#10003;</span>
+                    </div>
+                    <div class="grid">
+                        <div class="field" data-field="student_id">
+                            <label for="student_id">Student ID <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" id="student_id" name="student_id" maxlength="20"
+                                   placeholder="e.g. 100244279" autocomplete="off"
+                                   aria-describedby="student_id_err">
+                            <div class="error-text" id="student_id_err"></div>
+                        </div>
+                        <div class="field" data-field="last_name">
+                            <label for="last_name">Last Name <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" id="last_name" name="last_name" maxlength="100"
+                                   placeholder="Last name" autocomplete="family-name"
+                                   aria-describedby="last_name_err">
+                            <div class="error-text" id="last_name_err"></div>
+                        </div>
+                        <div class="field" data-field="first_name">
+                            <label for="first_name">First Name <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" id="first_name" name="first_name" maxlength="100"
+                                   placeholder="First name" autocomplete="given-name"
+                                   aria-describedby="first_name_err">
+                            <div class="error-text" id="first_name_err"></div>
+                        </div>
+                        <div class="field" data-field="classification">
+                            <label for="classification">Classification <span class="req" aria-hidden="true">*</span></label>
+                            <select class="input" id="classification" name="classification"
+                                    aria-describedby="classification_err">
+                                <option value="">Select classification</option>
+                            </select>
+                            <div class="error-text" id="classification_err"></div>
+                        </div>
+                        <div class="field col-2" data-field="major">
+                            <label for="major">Major <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" id="major" name="major" maxlength="150"
+                                   placeholder="e.g. Computer and Information Systems"
+                                   aria-describedby="major_err">
+                            <div class="error-text" id="major_err"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 2: SEMESTER INFORMATION -->
+                <section class="form-section" id="sec2" aria-labelledby="sec2Title">
+                    <div class="sec-head">
+                        <span class="sec-n" aria-hidden="true">2</span>
+                        <div class="sec-title"><h2 id="sec2Title">Semester Information</h2></div>
+                        <span class="sec-check" aria-hidden="true" data-check="2">&#10003;</span>
+                    </div>
+                    <div class="grid">
+                        <div class="field" data-field="academic_year">
+                            <label for="academic_year">Academic Year <span class="req" aria-hidden="true">*</span></label>
+                            <select class="input" id="academic_year" name="academic_year"
+                                    aria-describedby="academic_year_err">
+                                <option value="">Select academic year</option>
+                            </select>
+                            <div class="error-text" id="academic_year_err"></div>
+                        </div>
+                        <div class="field" data-field="semester">
+                            <label for="semester">Semester <span class="req" aria-hidden="true">*</span></label>
+                            <select class="input" id="semester" name="semester"
+                                    aria-describedby="semester_err">
+                                <option value="">Select semester</option>
+                            </select>
+                            <div class="error-text" id="semester_err"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 3: ACADEMIC PERFORMANCE -->
+                <section class="form-section" id="sec3" aria-labelledby="sec3Title">
+                    <div class="sec-head">
+                        <span class="sec-n" aria-hidden="true">3</span>
+                        <div class="sec-title"><h2 id="sec3Title">Academic Performance</h2></div>
+                        <span class="sec-check" aria-hidden="true" data-check="3">&#10003;</span>
+                    </div>
+                    <div class="grid">
+                        <div class="field" data-field="attempted_credit_hours">
+                            <label for="attempted_credit_hours">Attempted Credit Hours <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" inputmode="decimal" id="attempted_credit_hours"
+                                   name="attempted_credit_hours" placeholder="e.g. 15"
+                                   aria-describedby="attempted_credit_hours_err">
+                            <div class="error-text" id="attempted_credit_hours_err"></div>
+                        </div>
+                        <div class="field" data-field="passed_credit_hours">
+                            <label for="passed_credit_hours">Passed Credit Hours <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" inputmode="decimal" id="passed_credit_hours"
+                                   name="passed_credit_hours" placeholder="e.g. 15"
+                                   aria-describedby="passed_credit_hours_err">
+                            <div class="error-text" id="passed_credit_hours_err"></div>
+                        </div>
+                        <div class="field" data-field="semester_gpa">
+                            <label for="semester_gpa">Semester GPA <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" inputmode="decimal" id="semester_gpa"
+                                   name="semester_gpa" placeholder="0.00 &ndash; 4.00"
+                                   aria-describedby="semester_gpa_err">
+                            <div class="error-text" id="semester_gpa_err"></div>
+                        </div>
+                        <div class="field" data-field="career_gpa">
+                            <label for="career_gpa">Career GPA <span class="req" aria-hidden="true">*</span></label>
+                            <input class="input" type="text" inputmode="decimal" id="career_gpa"
+                                   name="career_gpa" placeholder="0.00 &ndash; 4.00"
+                                   aria-describedby="career_gpa_err">
+                            <div class="error-text" id="career_gpa_err"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary btn-lg btn-block" type="submit" id="reviewBtn">
+                        Review Information <span aria-hidden="true">&rarr;</span>
+                    </button>
+                    <p class="form-note">You will be able to review everything before submitting.</p>
+                </div>
+            </form>
+        </div>
+
+        <!-- ====================== REVIEW VIEW ====================== -->
+        <div class="card form-card reveal" id="viewReview" hidden>
+            <div class="form-head">
+                <h2>Review Your Report</h2>
+                <p>Please review the information below before submitting. Use <strong>Edit Information</strong> to make changes.</p>
+            </div>
+
+            <div class="review-blocks" id="reviewBlocks"></div>
+
+            <div class="form-actions review-actions">
+                <button class="btn btn-secondary btn-lg" type="button" id="editBtn">&larr; Edit Information</button>
+                <button class="btn btn-primary btn-lg" type="button" id="submitBtn">
+                    Submit Report
+                </button>
+            </div>
+        </div>
+
+        <!-- ====================== SUCCESS VIEW ====================== -->
+        <div class="card form-card success-card" id="viewSuccess" hidden>
+            <div class="s-emblem" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M9 11.5l2.6 2.6L20 6.5"/></svg>
+            </div>
+            <span class="pill"><span class="bdot" aria-hidden="true"></span>Confirmation Issued</span>
+            <h2>Report Submitted Successfully</h2>
+            <p class="s-desc">Thank you. Your Presidential Scholars semester academic report has been successfully submitted.</p>
+
+            <div class="confirmation-panel">
+                <div class="conf-row">
+                    <span class="conf-k">Confirmation Number</span>
+                    <span class="conf-ref" id="confReference"></span>
+                </div>
+                <div class="conf-grid">
+                    <div class="conf-item"><span class="conf-k">Student ID</span><span class="conf-v" id="confStudentId"></span></div>
+                    <div class="conf-item"><span class="conf-k">Student Name</span><span class="conf-v" id="confStudentName"></span></div>
+                    <div class="conf-item"><span class="conf-k">Semester</span><span class="conf-v" id="confSemester"></span></div>
+                    <div class="conf-item"><span class="conf-k">Academic Year</span><span class="conf-v" id="confYear"></span></div>
+                    <div class="conf-item"><span class="conf-k">Submission Date</span><span class="conf-v" id="confDate"></span></div>
+                    <div class="conf-item"><span class="conf-k">Submission Time</span><span class="conf-v" id="confTime"></span></div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary btn-lg btn-block" type="button" id="againBtn">Submit Another Report</button>
+            </div>
+        </div>
+
     </div>
 </main>
 
-<!-- ============================ FOOTER ============================ -->
+<!-- ====================== FOOTER ====================== -->
 <footer class="site-foot">
     <div class="container foot-inner">
         <span class="foot-brand">
             <span class="crest" aria-hidden="true">
                 <svg viewBox="0 0 30 30" aria-hidden="true">
-                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#fff">PS</text>
+                    <text x="15" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#c9a227">PS</text>
                 </svg>
             </span>
-            <span class="head-brand-text">
+            <span>
                 <span class="head-name">Presidential Scholars</span>
                 <span class="head-sub">Academic Reporting Portal</span>
             </span>
         </span>
-        <nav class="foot-links" aria-label="Footer">
-            <a href="/">Student Report</a>
-            <a href="/admin">Administrator Sign In</a>
-        </nav>
-        <div class="foot-copy">&copy; <span id="footYear">2026</span> Presidential Scholars Program. All rights reserved.</div>
+        <div class="foot-copy">
+            &copy; <span id="footYear">2026</span> Presidential Scholars Program. All rights reserved.
+        </div>
     </div>
 </footer>
 
